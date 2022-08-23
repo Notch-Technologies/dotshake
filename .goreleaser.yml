@@ -1,0 +1,83 @@
+project_name: dotshake
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dotshake
+    main: cmd/dotshake
+    dir: .
+    binary: dotshake
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/Notch-Technologies/dotshake/cmd/dotshake/cmd.version={{.Version}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - arm
+      - amd64
+      - arm64
+      - mips
+      - 386
+    gomips:
+      - hardfloat
+      - softfloat
+
+  - id: dotshaker
+    main: cmd/dotshaker
+    dir: .
+    binary: dotshaker
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/Notch-Technologies/dotshake/cmd/dotshaker/cmd.version={{.Version}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - arm
+      - amd64
+      - arm64
+      - mips
+      - 386
+    gomips:
+      - hardfloat
+      - softfloat
+
+# *.tar.gz
+archives:
+  - builds:
+      - dotshake
+      - dotshaker
+
+# *.deb, *.rpm, *.apk
+nfpms:
+  - id: dotshake-deb
+    maintainer: Dotshake <dev@dotshake.com>
+    description: dotshake
+    homepage: https://dotshake.com
+    bindir: /usr/bin
+    builds:
+      - dotshake
+    formats:
+      - deb
+
+  - id: dotshaker-deb
+    maintainer: Dotshake <dev@dotshake.com>
+    description: dotshaker
+    homepage: https://dotshake.com
+    bindir: /usr/bin
+    builds:
+      - dotshaker
+    formats:
+      - deb
