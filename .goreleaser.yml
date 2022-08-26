@@ -1,14 +1,11 @@
 project_name: dotshake
-env:
-  - GO111MODULE=on
 before:
   hooks:
     - go mod tidy
 
 builds:
   - id: dotshake
-    main: cmd/dotshake
-    dir: .
+    dir: cmd/dotshake
     binary: dotshake
     env:
       - CGO_ENABLED=0
@@ -19,7 +16,7 @@ builds:
     goos:
       - linux
       - darwin
-      - windows
+      # - windows
     goarch:
       - arm
       - amd64
@@ -31,8 +28,7 @@ builds:
       - softfloat
 
   - id: dotshaker
-    main: cmd/dotshaker
-    dir: .
+    dir: cmd/dotshaker
     binary: dotshaker
     env:
       - CGO_ENABLED=0
@@ -43,7 +39,7 @@ builds:
     goos:
       - linux
       - darwin
-      - windows
+      # - windows
     goarch:
       - arm
       - amd64
