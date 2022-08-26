@@ -8,22 +8,29 @@ on:
     - main
 
 jobs:
-  setup:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
-      - name: Set up Go
+      - name: setup go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.5
 
-  goreleaser:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
+      - name: cache go mod
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: install go mod
+        run: go mod tidy
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
