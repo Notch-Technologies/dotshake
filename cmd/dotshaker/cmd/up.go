@@ -7,12 +7,14 @@ package cmd
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotlog"
@@ -20,6 +22,7 @@ import (
 	"github.com/Notch-Technologies/dotshake/rcn"
 	"github.com/Notch-Technologies/dotshake/types/flagtype"
 	"github.com/peterbourgon/ff/v2/ffcli"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 var upArgs struct {
@@ -67,6 +70,15 @@ func execUp(ctx context.Context, args []string) error {
 
 	signalClient, serverClient, clientConf, mPubKey := initializeDotShakerConf(clientCtx, upArgs.clientPath, upArgs.debug, upArgs.serverHost, uint(upArgs.serverPort), upArgs.signalHost, uint(upArgs.signalPort), dotlog)
 
+	// TODO: (shinta) remove login process,
+	// this is because you log in when you do dotshake up,
+	// and then you make dotshaker work on the dotshake command side!This is because you log in when you do dotshake up,
+	//  and then you make dotshaker work on the dotshake command side!
+	err = login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
+	if err != nil {
+		dotlog.Logger.Fatalf("failed to login, %s", err.Error())
+	}
+
 	ch := make(chan struct{})
 
 	r := rcn.NewRcn(signalClient, serverClient, clientConf, mPubKey, ch, dotlog)
@@ -104,4 +116,43 @@ func execUp(ctx context.Context, args []string) error {
 	r.Close()
 
 	return nil
+}
+
+func login(
+	ctx context.Context,
+	dotlog *dotlog.DotLog,
+	serverHost string,
+	wgPrivKey, mkPubKey string,
+	isDev bool,
+	serverClient grpc_client.ServerClientImpl,
+) error {
+	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
+	if err != nil {
+		dotlog.Logger.Fatalf("failed to parse wg private key. because %v", err)
+	}
+
+	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())
+	if err != nil {
+		return err
+	}
+
+	// TODO: (shinta) use the open command to make URL pages open by themselves
+	if !res.IsRegistered {
+		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
+		msg, err := serverClient.ConnectStreamPeerLoginSession(mkPubKey)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Your dotshake ip => [%s/%s]\n", msg.Ip, msg.Cidr)
+		fmt.Printf("Successful login\n")
+
+		return nil
+	}
+
+	fmt.Printf("Your dotshake ip => [%s/%s]\n", res.Ip, res.Cidr)
+	fmt.Printf("Successful login\n")
+
+	return nil
+
 }
