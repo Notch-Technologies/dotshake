@@ -4,8 +4,6 @@ on:
   push:
     tags:
     - v*
-    branches:
-    - main
 
 jobs:
   release:
@@ -19,6 +17,11 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.5
+
+      - name: github private modules access
+        run: |
+          git config --global url."https://${{ secrets.GO_MODULES_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+          export GOPRIVATE="github.com/Notch-Technologies/client-go"
 
       - name: cache go mod
         uses: actions/cache@v1
