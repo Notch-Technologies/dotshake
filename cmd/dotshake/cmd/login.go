@@ -43,7 +43,7 @@ var loginCmd = &ffcli.Command{
 		fs.Int64Var(&loginArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "grpc server host port")
 		fs.StringVar(&loginArgs.logFile, "logfile", paths.DefaultClientLogFile(), "set logfile path")
 		fs.StringVar(&loginArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
-		fs.BoolVar(&loginArgs.debug, "debug", true, "is debug")
+		fs.BoolVar(&loginArgs.debug, "debug", false, "is debug")
 		return fs
 	})(),
 	Exec: execLogin,

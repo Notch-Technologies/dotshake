@@ -136,7 +136,8 @@ func login(
 		return err
 	}
 
-	// TODO: (shinta) use the open command to make URL pages open by themselves
+	// TODO: (shinta) use the open command to make URL pages open by themselves,
+	// you need to sign in or let either process if you are not signed in or signed up before accessing the loginurl.
 	if !res.IsRegistered {
 		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
 		msg, err := serverClient.ConnectStreamPeerLoginSession(mkPubKey)

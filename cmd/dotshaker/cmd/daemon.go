@@ -32,7 +32,7 @@ var daemonCmd = &ffcli.Command{
 		fs := flag.NewFlagSet("up", flag.ExitOnError)
 		fs.StringVar(&daemonArgs.logFile, "logfile", paths.DefaultClientLogFile(), "set logfile path")
 		fs.StringVar(&daemonArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
-		fs.BoolVar(&daemonArgs.debug, "debug", true, "is debug")
+		fs.BoolVar(&daemonArgs.debug, "debug", false, "is debug")
 		return fs
 	})(),
 	Subcommands: []*ffcli.Command{
