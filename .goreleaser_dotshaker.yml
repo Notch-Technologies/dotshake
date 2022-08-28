@@ -64,12 +64,3 @@ brews:
     license: "BSD3"
     test: |
       system "#{bin}/{{ .ProjectName }} version"
-
-uploads:
-  - name: debian
-    ids:
-    - dotshaker-deb
-    mode: archive
-    target: https://pkgs.dotshake.com/debian/pool/{{ .ArtifactName }};deb.distribution=stable;deb.component=main;deb.architecture={{ if .Arm }}armhf{{ else }}{{ .Arch }}{{ end }};deb.package=
-    username: upload
-    method: PUT
