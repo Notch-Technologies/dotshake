@@ -44,14 +44,14 @@ var upCmd = &ffcli.Command{
 	FlagSet: (func() *flag.FlagSet {
 		fs := flag.NewFlagSet("up", flag.ExitOnError)
 		fs.StringVar(&upArgs.clientPath, "path", paths.DefaultClientConfigFile(), "client default config file")
-		fs.StringVar(&upArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signaling server host url")
-		fs.Int64Var(&upArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signaling server host port")
 		fs.StringVar(&upArgs.serverHost, "server-host", "https://ctl.dotshake.com", "grpc server host url")
 		fs.Int64Var(&upArgs.serverPort, "server-port", flagtype.DefaultServerPort, "grpc server host port")
+		fs.StringVar(&upArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signaling server host url")
+		fs.Int64Var(&upArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signaling server host port")
 		fs.StringVar(&upArgs.logFile, "logfile", paths.DefaultDotShakerLogFile(), "set logfile path")
 		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
-		fs.BoolVar(&upArgs.debug, "debug", false, "is debug")
-		fs.BoolVar(&upArgs.daemon, "daemon", true, "whether to run the daemon process")
+		fs.BoolVar(&upArgs.debug, "debug", false, "for debug")
+		fs.BoolVar(&upArgs.daemon, "daemon", true, "running on daemon")
 		return fs
 	})(),
 	Exec: execUp,
