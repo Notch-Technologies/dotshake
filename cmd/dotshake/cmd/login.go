@@ -8,7 +8,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"time"
 
 	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
@@ -37,13 +36,13 @@ var loginCmd = &ffcli.Command{
 	FlagSet: (func() *flag.FlagSet {
 		fs := flag.NewFlagSet("login", flag.ExitOnError)
 		fs.StringVar(&loginArgs.clientPath, "path", paths.DefaultClientConfigFile(), "client default config file")
-		fs.StringVar(&loginArgs.serverHost, "server-host", "", "grpc server host url")
+		fs.StringVar(&loginArgs.serverHost, "server-host", "https://ctl.dotshake.com", "server host")
 		fs.Int64Var(&loginArgs.serverPort, "server-port", flagtype.DefaultServerPort, "grpc server host port")
-		fs.StringVar(&loginArgs.signalHost, "signal-host", "", "grpc server host url")
-		fs.Int64Var(&loginArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "grpc server host port")
+		fs.StringVar(&loginArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signal server host")
+		fs.Int64Var(&loginArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signal server port")
 		fs.StringVar(&loginArgs.logFile, "logfile", paths.DefaultClientLogFile(), "set logfile path")
-		fs.StringVar(&loginArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
-		fs.BoolVar(&loginArgs.debug, "debug", true, "is debug")
+		fs.StringVar(&loginArgs.logLevel, "loglevel", dotlog.InfoLevelStr, "set log level")
+		fs.BoolVar(&loginArgs.debug, "debug", false, "for debug logging")
 		return fs
 	})(),
 	Exec: execLogin,
@@ -52,10 +51,12 @@ var loginCmd = &ffcli.Command{
 func execLogin(ctx context.Context, args []string) error {
 	err := dotlog.InitDotLog(loginArgs.logLevel, loginArgs.logFile, loginArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
+		fmt.Printf("failed to initialize logger. because %v\n", err)
+		return err
 	}
 
 	dotlog := dotlog.NewDotLog("dotshake login")
+	dotlog.Logger.Debugf("initialize logger")
 
 	clientCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -68,11 +69,11 @@ func execLogin(ctx context.Context, args []string) error {
 
 	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, loginArgs.debug, serverClient)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to login, %s", err.Error())
+		dotlog.Logger.Warnf("failed to login, %s", err.Error())
 	}
 
-	fmt.Printf("Your dotshake ip => [%s/%s]\n", ip, cidr)
-	fmt.Printf("Successful login\n")
+	dotlog.Logger.Infof("Your dotshake ip => [%s/%s]\n", ip, cidr)
+	dotlog.Logger.Infof("Successful login\n")
 
 	return nil
 }
@@ -87,7 +88,7 @@ func login(
 ) (ip string, cidr string, err error) {
 	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to parse wg private key. because %v", err)
+		dotlog.Logger.Warnf("failed to parse wg private key. because %v", err)
 	}
 
 	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())
