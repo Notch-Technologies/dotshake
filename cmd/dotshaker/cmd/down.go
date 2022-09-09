@@ -28,7 +28,7 @@ var downCmd = &ffcli.Command{
 	FlagSet: (func() *flag.FlagSet {
 		fs := flag.NewFlagSet("down", flag.ExitOnError)
 		fs.StringVar(&downArgs.logFile, "logfile", paths.DefaultDotShakerLogFile(), "set logfile path")
-		fs.StringVar(&downArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
+		fs.StringVar(&downArgs.logLevel, "loglevel", dotlog.InfoLevelStr, "set log level")
 		fs.BoolVar(&downArgs.debug, "debug", false, "is debug")
 		return fs
 	})(),

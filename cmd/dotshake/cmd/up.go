@@ -47,7 +47,7 @@ var upCmd = &ffcli.Command{
 		fs.StringVar(&upArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signal server host")
 		fs.Int64Var(&upArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signal server port")
 		fs.StringVar(&upArgs.logFile, "logfile", paths.DefaultClientLogFile(), "set logfile path")
-		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
+		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.InfoLevelStr, "set log level")
 		fs.BoolVar(&upArgs.debug, "debug", false, "is debug")
 		return fs
 	})(),
@@ -74,16 +74,16 @@ func execUp(ctx context.Context, args []string) error {
 
 	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to login, %s", err.Error())
+		dotlog.Logger.Warnf("failed to login, %s", err.Error())
 	}
 
 	if !isInstallDotshakerDaemon(dotlog) || !isRunningDotShakerProcess(dotlog) {
-		dotlog.Logger.Fatalf("You need to activate dotshaker. execute this command 'dotshaker up'")
+		dotlog.Logger.Warnf("You need to activate dotshaker. execute this command 'dotshaker up'")
 	}
 
 	err = upEngine(ctx, serverClient, dotlog, clientConf.TunName, mPubKey, ip, cidr, clientConf.WgPrivateKey, clientConf.BlackList)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to start engine. because %v", err)
+		dotlog.Logger.Warnf("failed to start engine. because %v", err)
 		return err
 	}
 
@@ -135,14 +135,14 @@ func upEngine(
 		cancel,
 	)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to connect signal client. because %v", err)
+		dotlog.Logger.Warnf("failed to connect signal client. because %v", err)
 		return err
 	}
 
 	// start engine
 	err = engine.Start()
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to start dotengine. because %v", err)
+		dotlog.Logger.Warnf("failed to start dotengine. because %v", err)
 		return err
 	}
 
