@@ -37,13 +37,13 @@ var loginCmd = &ffcli.Command{
 	FlagSet: (func() *flag.FlagSet {
 		fs := flag.NewFlagSet("login", flag.ExitOnError)
 		fs.StringVar(&loginArgs.clientPath, "path", paths.DefaultClientConfigFile(), "client default config file")
-		fs.StringVar(&loginArgs.serverHost, "server-host", "", "grpc server host url")
+		fs.StringVar(&loginArgs.serverHost, "server-host", "https://ctl.dotshake.com", "server host")
 		fs.Int64Var(&loginArgs.serverPort, "server-port", flagtype.DefaultServerPort, "grpc server host port")
-		fs.StringVar(&loginArgs.signalHost, "signal-host", "", "grpc server host url")
-		fs.Int64Var(&loginArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "grpc server host port")
+		fs.StringVar(&loginArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signal server host")
+		fs.Int64Var(&loginArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signal server port")
 		fs.StringVar(&loginArgs.logFile, "logfile", paths.DefaultClientLogFile(), "set logfile path")
 		fs.StringVar(&loginArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
-		fs.BoolVar(&loginArgs.debug, "debug", true, "is debug")
+		fs.BoolVar(&loginArgs.debug, "debug", false, "for debug logging")
 		return fs
 	})(),
 	Exec: execLogin,

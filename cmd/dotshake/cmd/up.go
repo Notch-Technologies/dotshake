@@ -42,13 +42,13 @@ var upCmd = &ffcli.Command{
 	FlagSet: (func() *flag.FlagSet {
 		fs := flag.NewFlagSet("up", flag.ExitOnError)
 		fs.StringVar(&upArgs.clientPath, "path", paths.DefaultClientConfigFile(), "client default config file")
-		fs.StringVar(&upArgs.serverHost, "server-host", "", "grpc server host url")
+		fs.StringVar(&upArgs.serverHost, "server-host", "https://ctl.dotshake.com", "server host")
 		fs.Int64Var(&upArgs.serverPort, "server-port", flagtype.DefaultServerPort, "grpc server host port")
-		fs.StringVar(&upArgs.signalHost, "signal-host", "", "grpc server host url")
-		fs.Int64Var(&upArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "grpc server host port")
+		fs.StringVar(&upArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signal server host")
+		fs.Int64Var(&upArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signal server port")
 		fs.StringVar(&upArgs.logFile, "logfile", paths.DefaultClientLogFile(), "set logfile path")
 		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
-		fs.BoolVar(&upArgs.debug, "debug", true, "is debug")
+		fs.BoolVar(&upArgs.debug, "debug", false, "is debug")
 		return fs
 	})(),
 	Exec: execUp,

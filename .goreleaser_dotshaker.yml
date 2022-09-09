@@ -1,0 +1,66 @@
+project_name: dotshaker
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dotshaker
+    dir: cmd/dotshaker
+    binary: dotshaker
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/Notch-Technologies/dotshake/cmd/dotshaker/cmd.version={{.Version}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    goos:
+      - linux
+      - darwin
+      # - windows
+    goarch:
+      - arm
+      - amd64
+      - arm64
+      - mips
+      - 386
+    gomips:
+      - hardfloat
+      - softfloat
+
+# *.tar.gz
+archives:
+  - builds:
+    - dotshaker
+
+# *.deb, *.rpm, *.apk
+nfpms:
+  - id: dotshaker-deb
+    maintainer: dev@dotshake.com
+    description: dotshaker
+    homepage: https://dotshake.com
+    bindir: /usr/bin
+    builds:
+      - dotshaker
+    formats:
+      - deb
+    scripts:
+      preremove: "scripts/preremove.sh"
+
+brews:
+  -
+    ids:
+      - default
+    commit_author:
+      name: Dotshake
+      email: dev@dotshake.com
+    description: P2P mesh network using WireGuard
+    tap:
+      owner: Notch-Technologies
+      name: homebrew-tap
+      token: "{{ .Env.BREW_TAP_REPO_TOKEN }}"
+      branch: main
+    download_strategy: CurlDownloadStrategy
+    homepage: https://dotshake.com/
+    license: "BSD3"
+    test: |
+      system "#{bin}/{{ .ProjectName }} version"
