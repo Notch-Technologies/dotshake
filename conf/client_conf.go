@@ -63,7 +63,7 @@ func (c *ClientConf) writeClientConf(
 	presharedKey string,
 ) *ClientConf {
 	if err := os.MkdirAll(filepath.Dir(c.path), 0755); err != nil {
-		c.dotlog.Logger.Fatalf("failed to create directory with %s. because %s", c.path, err.Error())
+		c.dotlog.Logger.Warnf("failed to create directory with %s, because %s", c.path, err.Error())
 	}
 
 	c.ServerHost = serverHost
@@ -112,7 +112,7 @@ func (c *ClientConf) CreateClientConf() *ClientConf {
 	default:
 		var core ClientConf
 		if err := json.Unmarshal(b, &core); err != nil {
-			c.dotlog.Logger.Fatalf("can not read client config file. because %v", err)
+			c.dotlog.Logger.Warnf("can not read client config file, because %v", err)
 		}
 
 		var serverhost string
@@ -153,7 +153,7 @@ func (c *ClientConf) GetClientConf() (*ClientConf, error) {
 	}
 
 	if err := json.Unmarshal(b, &cc); err != nil {
-		c.dotlog.Logger.Fatalf("can not read client config file. because %v", err)
+		c.dotlog.Logger.Warnf("can not read client config file, because %v", err)
 		return nil, err
 	}
 

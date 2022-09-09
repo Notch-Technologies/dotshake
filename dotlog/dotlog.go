@@ -22,7 +22,6 @@ const (
 
 var (
 	globalLogger *zap.Logger
-	devMode      bool = false
 )
 
 type DotLog struct {
@@ -36,7 +35,6 @@ func NewDotLog(name string) *DotLog {
 }
 
 func InitDotLog(logLevel string, logFile string, dev bool) error {
-	devMode = dev
 	var level zapcore.Level
 	switch logLevel {
 	case DebugLevelStr:
@@ -62,7 +60,6 @@ func InitDotLog(logLevel string, logFile string, dev bool) error {
 		EncodeLevel:    zapcore.LowercaseLevelEncoder,
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
 	ll := lumberjack.Logger{
@@ -91,8 +88,10 @@ func InitDotLog(logLevel string, logFile string, dev bool) error {
 	if err != nil {
 		panic(fmt.Sprintf("build zap logger from config error: %v", err))
 	}
+
 	zap.ReplaceGlobals(_globalLogger)
 	globalLogger = _globalLogger
+
 	return nil
 }
 
