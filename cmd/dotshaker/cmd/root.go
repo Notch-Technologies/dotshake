@@ -36,7 +36,7 @@ func initializeDotShakerConf(
 	//
 	cfs, err := store.NewFileStore(paths.DefaultDotshakeClientStateFile(), dotlog)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to create clietnt state. because %v", err)
+		dotlog.Logger.Warnf("failed to create clietnt state, because %v", err)
 	}
 
 	// configure client store
@@ -44,7 +44,7 @@ func initializeDotShakerConf(
 	cs := store.NewClientStore(cfs, dotlog)
 	err = cs.WritePrivateKey()
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to write client state private key. because %v", err)
+		dotlog.Logger.Warnf("failed to write client state private key, because %v", err)
 	}
 	mPubKey = cs.GetPublicKey()
 
@@ -58,7 +58,7 @@ func initializeDotShakerConf(
 		dotlog,
 	)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to initialize client core. because %v", err)
+		dotlog.Logger.Warnf("failed to initialize client core, because %v", err)
 	}
 
 	clientConf = clientConf.CreateClientConf()
@@ -67,12 +67,12 @@ func initializeDotShakerConf(
 
 	signalClient, err = setupGrpcSignalClient(clientCtx, clientConf.GetSignalHost(), dotlog, option)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to initialize grpc signal client. because %v", err)
+		dotlog.Logger.Warnf("failed to initialize grpc signal client, because %v", err)
 	}
 
 	serverClient, err = setupGrpcServerClient(clientCtx, clientConf.GetServerHost(), dotlog, option)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to initialize grpc server client. because %v", err)
+		dotlog.Logger.Warnf("failed to initialize grpc server client, because %v", err)
 	}
 
 	return signalClient, serverClient, clientConf, mPubKey
@@ -93,7 +93,7 @@ func setupGrpcServerClient(
 
 	serverClient := grpc_client.NewServerClient(sconn, dotlog)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to connect server client. because %v", err)
+		dotlog.Logger.Warnf("failed to connect server client, because %v", err)
 	}
 
 	return serverClient, err
@@ -112,7 +112,7 @@ func setupGrpcSignalClient(
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to connect signal client. because %v", err)
+		dotlog.Logger.Warnf("failed to connect signal client, because %v", err)
 	}
 
 	connState := conn.NewConnectedState()

@@ -4,7 +4,8 @@ sudo ./dotshake login -signal-host=$SIGNAL_HOST \
     -server-host=$SERVER_HOST \
     -signal-port=$SIGNAL_PORT \
     -server-port=$SERVER_PORT \
-    -debug=$IS_DEBUG
+    -debug=$IS_DEBUG \
+    -loglevel=$LOG_LEVEL
 
 go build -o dotshaker ./cmd/dotshaker/dotshaker.go
 sudo ./dotshaker up -signal-host=$SIGNAL_HOST \
@@ -12,4 +13,5 @@ sudo ./dotshaker up -signal-host=$SIGNAL_HOST \
     -signal-port=$SIGNAL_PORT \
     -server-port=$SERVER_PORT \
     -daemon=$IS_DEAMON \
-    -debug=$IS_DEBUG
+    -debug=$IS_DEBUG \
+    -loglevel=$LOG_LEVEL

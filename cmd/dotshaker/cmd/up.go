@@ -49,7 +49,7 @@ var upCmd = &ffcli.Command{
 		fs.StringVar(&upArgs.signalHost, "signal-host", "https://signal.dotshake.com", "signaling server host url")
 		fs.Int64Var(&upArgs.signalPort, "signal-port", flagtype.DefaultSignalingServerPort, "signaling server host port")
 		fs.StringVar(&upArgs.logFile, "logfile", paths.DefaultDotShakerLogFile(), "set logfile path")
-		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.DebugLevelStr, "set log level")
+		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.InfoLevelStr, "set log level")
 		fs.BoolVar(&upArgs.debug, "debug", false, "for debug")
 		fs.BoolVar(&upArgs.daemon, "daemon", true, "running on daemon")
 		return fs
@@ -76,7 +76,7 @@ func execUp(ctx context.Context, args []string) error {
 	//  and then you make dotshaker work on the dotshake command side!
 	err = login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to login, %s", err.Error())
+		dotlog.Logger.Warnf("failed to login, %s", err.Error())
 	}
 
 	ch := make(chan struct{})
@@ -128,7 +128,7 @@ func login(
 ) error {
 	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to parse wg private key. because %v", err)
+		dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
 	}
 
 	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())

@@ -96,7 +96,7 @@ func (r *Rcn) Start() {
 func (r *Rcn) createIface() error {
 	wgPrivateKey, err := wgtypes.ParseKey(r.clientConf.WgPrivateKey)
 	if err != nil {
-		r.dotlog.Logger.Fatalf("failed to parse wg private key. because %v", err)
+		r.dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
 	}
 
 	m, err := r.serverClient.GetMachine(r.mk, wgPrivateKey.PublicKey().String())
@@ -105,7 +105,7 @@ func (r *Rcn) createIface() error {
 	}
 
 	if !m.IsRegistered {
-		r.dotlog.Logger.Fatalf("please login with `dotshake login` and try again")
+		r.dotlog.Logger.Warnf("please login with `dotshake login` and try again")
 	}
 
 	r.iface = iface.NewIface(r.clientConf.TunName, r.clientConf.WgPrivateKey, m.Ip, m.Cidr, r.dotlog)

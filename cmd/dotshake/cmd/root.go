@@ -34,14 +34,18 @@ func initializeDotShakeConf(
 	//
 	cfs, err := store.NewFileStore(paths.DefaultDotshakeClientStateFile(), dotlog)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to create clietnt state. because %v", err)
+		dotlog.Logger.Warnf("failed to create client state, because %v", err)
 	}
+
+	dotlog.Logger.Debugf("client store has been succeassfully created")
 
 	cs := store.NewClientStore(cfs, dotlog)
 	err = cs.WritePrivateKey()
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to write client state private key. because %v", err)
+		dotlog.Logger.Warnf("failed to write client state private key, because %v", err)
 	}
+
+	dotlog.Logger.Debugf("private key was successfully written to client store")
 	mPubKey = cs.GetPublicKey()
 
 	// initialize client conf
@@ -55,13 +59,15 @@ func initializeDotShakeConf(
 	)
 
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to initialize client core. because %v", err)
+		dotlog.Logger.Warnf("failed to initialize client core, because %v", err)
 	}
 
 	clientConf = clientConf.CreateClientConf()
 	if err != nil {
-		dotlog.Logger.Fatalf("can not get client conf, because %v", err)
+		dotlog.Logger.Warnf("can not get client conf, because %v", err)
 	}
+
+	dotlog.Logger.Debugf("client config file has been succeassfully created")
 
 	option := grpc_client.NewGrpcDialOption(dotlog, isDebug)
 
@@ -78,7 +84,7 @@ func initializeDotShakeConf(
 
 	serverClient = grpc_client.NewServerClient(gconn, dotlog)
 	if err != nil {
-		dotlog.Logger.Fatalf("failed to connect server client. because %v", err)
+		dotlog.Logger.Warnf("failed to connect grpc server client, because %v", err)
 	}
 
 	return mPubKey, serverClient, clientConf
