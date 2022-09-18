@@ -31,6 +31,7 @@ builds:
 archives:
   - builds:
     - dotshaker
+    name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}"
 
 # *.deb, *.rpm, *.apk
 nfpms:
