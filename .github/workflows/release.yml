@@ -114,11 +114,6 @@ jobs:
           with:
             name: release-dotshaker
 
-        - name: echo download paths
-          run: |
-            echo ${{steps.download-dotshake.outputs.download-path}}
-            ls ${{steps.download-dotshake.outputs.download-path}}
-
         - name: setup ssh
           run: |
             mkdir -p /home/runner/.ssh
