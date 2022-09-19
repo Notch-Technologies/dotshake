@@ -49,6 +49,7 @@ nfpms:
       - deb
     scripts:
       preremove: "scripts/preremove.sh"
+    name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
 brews:
   -
