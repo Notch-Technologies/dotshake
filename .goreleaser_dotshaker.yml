@@ -32,7 +32,7 @@ archives:
   -
     builds:
       - dotshaker
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    # name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
 
