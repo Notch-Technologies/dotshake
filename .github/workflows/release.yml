@@ -2,10 +2,8 @@ name: Create a release assets
 
 on:
   push:
-    branches:
-    - fix-goreleaser-name-template
-    # tags:
-    # - "v[0-9]+.[0-9]+.[0-9]+"
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release_dotshake:
