@@ -29,11 +29,12 @@ builds:
 
 # *.tar.gz
 archives:
-  builds:
-    - dotshake
-  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-  files:
-    - README.md
+  -
+    builds:
+      - dotshake
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
 
 # *.deb, *.rpm, *.apk
 nfpms:
