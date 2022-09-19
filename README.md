@@ -1,6 +1,5 @@
 # dotshake
 
-
 ## env
 TODO: (shinta) preparing enviroment variables
 
