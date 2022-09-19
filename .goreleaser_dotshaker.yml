@@ -32,7 +32,7 @@ archives:
   -
     builds:
       - dotshaker
-    name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}"
+    name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
       - README.md
 
@@ -49,6 +49,7 @@ nfpms:
       - deb
     scripts:
       preremove: "scripts/preremove.sh"
+    file_name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
 brews:
   -
