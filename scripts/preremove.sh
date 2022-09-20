@@ -1,5 +1,4 @@
 #!/bin/sh
-
 uninstall() {
   if type "systemctl" > /dev/null 2>&1; then
     printf "\e[31mstopping the dotshake...\e[m\n"
