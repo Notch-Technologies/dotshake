@@ -32,7 +32,6 @@ archives:
   -
     builds:
       - dotshake
-    name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
       - README.md
 
@@ -49,7 +48,6 @@ nfpms:
       - deb
     scripts:
       preremove: "scripts/preremove.sh"
-    file_name_template: "{{ .ProjectName }}_stable_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
 brews:
   -
