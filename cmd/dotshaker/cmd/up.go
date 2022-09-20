@@ -51,7 +51,7 @@ var upCmd = &ffcli.Command{
 		fs.StringVar(&upArgs.logFile, "logfile", paths.DefaultDotShakerLogFile(), "set logfile path")
 		fs.StringVar(&upArgs.logLevel, "loglevel", dotlog.InfoLevelStr, "set log level")
 		fs.BoolVar(&upArgs.debug, "debug", false, "for debug")
-		fs.BoolVar(&upArgs.daemon, "daemon", true, "running on daemon")
+		fs.BoolVar(&upArgs.daemon, "daemon", true, "whether to install daemon")
 		return fs
 	})(),
 	Exec: execUp,
@@ -84,16 +84,19 @@ func execUp(ctx context.Context, args []string) error {
 	r := rcn.NewRcn(signalClient, serverClient, clientConf, mPubKey, ch, dotlog)
 
 	if upArgs.daemon {
-		dotlog.Logger.Debugf("launching dotshaker daemon...\n")
 		d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
 		err = d.Install()
 		if err != nil {
 			dotlog.Logger.Errorf("failed to install dotshaker. %v", err)
 			return err
 		}
-		dotlog.Logger.Debugf("start dotshaker daemon.\n")
+
+		dotlog.Logger.Infof("launched dotshaker daemon.\n")
+
 		return nil
 	}
+
+	dotlog.Logger.Infof("starting dotshake.\n")
 
 	go r.Start()
 
