@@ -13,7 +13,7 @@ Wants=network-online.target systemd-networkd-wait-online.service
 [Service]
 User=root
 Type=simple
-ExecStart=/bin/dotshaker up
+ExecStart=/usr/bin/dotshaker up -daemon=false
 Restart=on-failure
 RestartSec=15s
 
@@ -22,5 +22,5 @@ WantedBy=multi-user.target
 `
 
 const DaemonFilePath = "/etc/systemd/system/dotshaker.service"
-const BinPath = "/bin/dotshaker"
+const BinPath = "/usr/bin/dotshaker"
 const ServiceName = "dotshaker"
