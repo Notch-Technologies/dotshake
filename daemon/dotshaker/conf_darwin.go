@@ -22,6 +22,9 @@ const SystemConfig = `
   <key>RunAtLoad</key>
   <true/>
 
+  <key>KeepAlive</key>
+  <true/>
+
   <key>StartInterval</key>
     <integer>5</integer>
 
