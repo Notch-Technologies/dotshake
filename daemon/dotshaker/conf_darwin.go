@@ -17,6 +17,7 @@ const SystemConfig = `
   <array>
     <string>/usr/local/bin/dotshaker</string>
     <string>up</string>
+    <string>-daemon=false</string>
   </array>
 
   <key>RunAtLoad</key>

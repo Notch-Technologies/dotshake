@@ -47,7 +47,12 @@ nfpms:
     formats:
       - deb
     scripts:
+      # install or uninstall after
+      preinstall: "scripts/preinstall.sh"
       preremove: "scripts/preremove.sh"
+      # install or uninstall later
+      # postinstall: "scripts/preremove.sh"
+      # postremove: "scripts/preremove.sh"
 
 brews:
   -
