@@ -1,5 +1,3 @@
 #!/bin/sh
-sudo apt-get update && apt-get install -y \
-  net-tools \
-  network-manager \
-  && apt-get clean
+sudo apt-get update
+sudo apt-get install net-tools network-manager
