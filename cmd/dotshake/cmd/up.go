@@ -7,6 +7,7 @@ package cmd
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -61,6 +62,7 @@ func execUp(ctx context.Context, args []string) error {
 	err := dotlog.InitDotLog(upArgs.logLevel, upArgs.logFile, upArgs.debug)
 	if err != nil {
 		log.Fatalf("failed to initialize logger. because %v", err)
+		return err
 	}
 	dotlog := dotlog.NewDotLog("dotshake up")
 
@@ -75,10 +77,14 @@ func execUp(ctx context.Context, args []string) error {
 	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
+		fmt.Println("failed to login")
+		return nil
 	}
 
 	if !isInstallDotshakerDaemon(dotlog) || !isRunningDotShakerProcess(dotlog) {
 		dotlog.Logger.Warnf("You need to activate dotshaker. execute this command 'dotshaker up'")
+		fmt.Println("You need to activate dotshaker.")
+		return nil
 	}
 
 	err = upEngine(ctx, serverClient, dotlog, clientConf.TunName, mPubKey, ip, cidr, clientConf.WgPrivateKey, clientConf.BlackList)
@@ -122,7 +128,7 @@ func upEngine(
 ) error {
 	pctx, cancel := context.WithCancel(ctx)
 
-	engine, err := dotengine.NewDotEngine(
+	dotEngine, err := dotengine.NewDotEngine(
 		serverClient,
 		dotlog,
 		tunName,
@@ -140,7 +146,7 @@ func upEngine(
 	}
 
 	// start engine
-	err = engine.Start()
+	err = dotEngine.Start()
 	if err != nil {
 		dotlog.Logger.Warnf("failed to start dotengine. because %v", err)
 		return err

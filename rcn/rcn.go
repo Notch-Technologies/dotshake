@@ -85,7 +85,7 @@ func (r *Rcn) Start() {
 
 		go r.cp.WaitForRemoteConn()
 
-		r.cp.StartHangoutMachines()
+		// r.cp.StartHangoutMachines()
 
 		go r.cp.SyncRemoteMachine()
 
@@ -112,16 +112,19 @@ func (r *Rcn) createIface() error {
 	return iface.CreateIface(r.iface, r.dotlog)
 }
 
-func (r *Rcn) Close() {
+func (r *Rcn) Stop() error {
 	err := r.cp.Close()
 	if err != nil {
 		r.dotlog.Logger.Errorf("failed to close control plane, because %s", err.Error())
+		return err
 	}
 
 	err = iface.RemoveIface(r.iface.Tun, r.dotlog)
 	if err != nil {
 		r.dotlog.Logger.Errorf("failed to remove iface, because %s", err.Error())
+		return err
 	}
 
 	r.dotlog.Logger.Debugf("closed complete rcn")
+	return err
 }

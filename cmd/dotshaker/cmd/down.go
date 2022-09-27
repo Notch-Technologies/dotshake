@@ -2,17 +2,22 @@
 // Use of this source code is governed by a BSD 3-Clause License
 // license that can be found in the LICENSE file.
 
+// the down cmd terminates the dotshaker daemon process and closes
+// the p2p connection
+
 package cmd
 
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
+	"time"
 
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/paths"
+	"github.com/Notch-Technologies/dotshake/rcn"
 	"github.com/peterbourgon/ff/v2/ffcli"
 )
 
@@ -40,7 +45,8 @@ var downCmd = &ffcli.Command{
 func execDown(ctx context.Context, args []string) error {
 	err := dotlog.InitDotLog(downArgs.logLevel, downArgs.logFile, downArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
+		fmt.Println("failed to initialize logger")
+		return nil
 	}
 	dotlog := dotlog.NewDotLog("dotshaker down")
 
@@ -48,16 +54,35 @@ func execDown(ctx context.Context, args []string) error {
 
 	_, isInstalled := d.Status()
 	if !isInstalled {
-		dotlog.Logger.Debugf("already down")
+		fmt.Println("already terminated")
+		return nil
+	}
+
+	clientCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	signalClient, serverClient, clientConf, mPubKey := initializeDotShakerConf(
+		clientCtx,
+		upArgs.clientPath,
+		upArgs.debug, upArgs.serverHost, uint(upArgs.serverPort), upArgs.signalHost, uint(upArgs.signalPort), dotlog)
+
+	r := rcn.NewRcn(signalClient, serverClient, clientConf, mPubKey, nil, dotlog)
+
+	err = r.Stop()
+	if err != nil {
+		dotlog.Logger.Errorf("failed to stop dotshaker, %s", err.Error())
+		fmt.Println("failed to uninstall dotshake")
+
 		return nil
 	}
 
 	err = d.Uninstall()
 	if err != nil {
 		dotlog.Logger.Errorf("failed to uninstall dotshaker, %s", err.Error())
-	}
+		fmt.Println("failed to uninstall dotshake")
 
-	dotlog.Logger.Debugf("completed down dotshaker")
+		return nil
+	}
 
 	return nil
 }

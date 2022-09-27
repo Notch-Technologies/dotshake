@@ -116,7 +116,7 @@ func execUp(ctx context.Context, args []string) error {
 	}()
 	<-ch
 
-	r.Close()
+	r.Stop()
 
 	return nil
 }
