@@ -1,96 +1,31 @@
-# dotshake
+# Dotshake
 
-## env
-TODO: (shinta) preparing enviroment variables
+- Website: https://dotshake.com
+- Documentation: [https://docs.dotshake.com](https://docs.dotshake.com)
+- Tutorials: [Dotshake Tutorials](https://docs.dotshake.com/how-to-guides/quick_start)
+- Architecture: [Learn to Dotshake](https://docs.dotshake.com/overview/how_it_works)
 
-## for install
-TODO: (shinta) preparing how install for dotshake command
-### linux
+<img alt="Dotshake" src="https://dotshake-docs-assets.s3.ap-northeast-1.amazonaws.com/dotshake-icon.png" width="100px">
 
-### darwin
+Dotshake is software that makes it easy to build a small internet for companies and individuals.
 
-### freebsd
+There is no need to configure a single firewall or VPN gateway
 
-### windows
+The key features of Dotshake are:
 
-## for build without docker
-TODO: (shinta) preparing arguments for each commands
-check the command line arguments carefully!
+- [ ] Access Controls
+- [ ] Wormhole(Network Routes)
+- [ ] Desktop Application for Linux, MacOS, Windows
+- [ ] Mobile Application for iOS, Android
+- [ ] DotDNS(Private Network DNS)
+- [ ] DotSSH(Easy SSH)
 
-### server
-start the server without docker
-`sudo go run cmd/server/server.go`
+## Getting Started & Documentation
 
-### signaling
-start the signaling without docker
-`go run cmd/signaling/signaling.go`
+Documentation is available on the [Dotshake Website](https://dotshake.com):
 
-### dotshake
-start the dotshake without docker
-`sudo go run cmd/dotshake/up.go --key <your setup key>`
+- [Introduction](https://docs.dotshake.com/ja/overview/how_it_works/)
+- [Documentation](https://docs.dotshake.com)
 
-## for build with docker
-start the server using docker-compose
-`make up-server`
-if you want to build
-`make build-server`
+If you are new to Dotshake, please see [Quick Start guides](https://docs.dotshake.com/ja/how-to-guides/quick_start/) in the documentation.
 
-start the signaling server using docker-compose
-`make up-signaling`
-if you want to build
-`make build-signaling`
-
-start the dotshake using docker-compose
-`make up-dotshake`
-if you want to build
-`make build-dotshake`
-
-## for development
-if you want develop server
-`cmd/server` is the server that manages the peer's information.
-
-if you want develop signaling server
-`cmd/signaling` is the server to negotiate peer.
-
-if you want develop dotshake
-`cmd/dotshake` is the connects to peer clients, signaling servers and servers, and performs peer communication.
-
-## for NixOS
-TODO: Instead of using make, use flake to create the dotshake binary. This will make development much easier since the build binaries can be placed directly in the store without using the nix-store command.
-
-if you want to run it in a daemon,
-1. run `make store` to create a dotshake build binary in store
-2. add the store path as follows and rebuild nixos
-
-```
-  { pkgs, ... }:
-
-  let
-  in {
-    nixpkgs.overlays = [(self: super: {
-      dotshake = pkgs.writeScriptBin "dotshake" ''
-        #! ${pkgs.stdenv.shell} -e
-        exec </your store binary> up // place your own built binaries in the store
-      '';
-    })];
-  
-    # for development dotshake
-    systemd.services.dotshake = {
-      description = "dotshake daemon";
-      wants  = [ "network-online.target" "systemd-networkd-wait-online.service"];
-      after = [ "network-online.target" ];
-      path = [ pkgs.iproute ];
-      serviceConfig = {
-        User = "root";
-        Type = "simple";
-        ExecStart = "${pkgs.dotshake}/bin/dotshake";
-        Restart = "on-failure";
-        RestartSec = "15";
-      };
-      wantedBy = [ "multi-user.target" ];
-    };
-  }
-
-```
-
-enjoy the daemons.
