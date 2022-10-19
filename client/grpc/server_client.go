@@ -6,8 +6,8 @@ package grpc
 
 import (
 	"context"
-	"io"
 
+	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/daemon"
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/login_session"
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/machine"
 	"github.com/Notch-Technologies/dotshake/dotlog"
@@ -20,17 +20,16 @@ import (
 
 type ServerClientImpl interface {
 	GetMachine(mk, wgPubKey string) (*machine.GetMachineResponse, error)
-
 	SyncRemoteMachinesConfig(mk string) (*machine.SyncMachinesResponse, error)
-
-	ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error
-	JoinHangoutMachines(mk string) (*machine.HangOutMachinesResponse, error)
-
 	ConnectStreamPeerLoginSession(mk string) (*login_session.PeerLoginSessionResponse, error)
+	Connect(mk string) (*daemon.GetConnectionStatusResponse, error)
+	Disconnect(mk string) (*daemon.GetConnectionStatusResponse, error)
+	GetConnectionStatus(mk string) (*daemon.GetConnectionStatusResponse, error)
 }
 
 type ServerClient struct {
 	machineClient      machine.MachineServiceClient
+	daemonClient       daemon.DaemonServiceClient
 	loginSessionClient login_session.LoginSessionServiceClient
 	conn               *grpc.ClientConn
 	ctx                context.Context
@@ -43,6 +42,7 @@ func NewServerClient(
 ) ServerClientImpl {
 	return &ServerClient{
 		machineClient:      machine.NewMachineServiceClient(conn),
+		daemonClient:       daemon.NewDaemonServiceClient(conn),
 		loginSessionClient: login_session.NewLoginSessionServiceClient(conn),
 		conn:               conn,
 		ctx:                context.Background(),
@@ -121,43 +121,38 @@ func (c *ServerClient) SyncRemoteMachinesConfig(mk string) (*machine.SyncMachine
 	return conf, nil
 }
 
-func (c *ServerClient) ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error {
+func (c *ServerClient) Connect(mk string) (*daemon.GetConnectionStatusResponse, error) {
 	md := metadata.New(map[string]string{utils.MachineKey: mk})
 	newctx := metadata.NewOutgoingContext(c.ctx, md)
 
-	stream, err := c.machineClient.ConnectToHangoutMachines(newctx, &emptypb.Empty{})
-	if err != nil {
-		return err
-	}
-
-	for {
-		hangout, err := stream.Recv()
-		if err == io.EOF {
-			c.dotlog.Logger.Errorf("hangout machines return to EOF, received by [%s]", mk)
-			return err
-		}
-
-		if err != nil {
-			c.dotlog.Logger.Errorf("disconnect hangout machines, received by [%s], %s", mk, err.Error())
-			return err
-		}
-
-		err = handler(hangout)
-		if err != nil {
-			c.dotlog.Logger.Errorf("error handle with hangout machines, received by [%s]", mk)
-			return err
-		}
-	}
-}
-
-func (c *ServerClient) JoinHangoutMachines(mk string) (*machine.HangOutMachinesResponse, error) {
-	md := metadata.New(map[string]string{utils.MachineKey: mk})
-	newctx := metadata.NewOutgoingContext(c.ctx, md)
-
-	res, err := c.machineClient.JoinHangOutMachines(newctx, &emptypb.Empty{})
+	status, err := c.daemonClient.Connect(newctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	return status, nil
+}
+
+func (c *ServerClient) Disconnect(mk string) (*daemon.GetConnectionStatusResponse, error) {
+	md := metadata.New(map[string]string{utils.MachineKey: mk})
+	newctx := metadata.NewOutgoingContext(c.ctx, md)
+
+	status, err := c.daemonClient.Disconnect(newctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	return status, nil
+}
+
+func (c *ServerClient) GetConnectionStatus(mk string) (*daemon.GetConnectionStatusResponse, error) {
+	md := metadata.New(map[string]string{utils.MachineKey: mk})
+	newctx := metadata.NewOutgoingContext(c.ctx, md)
+
+	status, err := c.daemonClient.GetConnectionStatus(newctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	return status, nil
 }
