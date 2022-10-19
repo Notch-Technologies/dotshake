@@ -8,7 +8,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
@@ -49,11 +48,11 @@ var installDaemonCmd = &ffcli.Command{
 }
 
 func installDaemon(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(daemonArgs.logLevel, daemonArgs.logFile, daemonArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker daemon", daemonArgs.logLevel, daemonArgs.logFile, daemonArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger: %v", err)
+		fmt.Printf("failed to initialize logger: %v", err)
+		return nil
 	}
-	dotlog := dotlog.NewDotLog("daemon")
 
 	d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
 	err = d.Install()
@@ -72,11 +71,11 @@ var uninstallDaemonCmd = &ffcli.Command{
 }
 
 func uninstallDaemon(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(daemonArgs.logLevel, daemonArgs.logFile, daemonArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker daemon", daemonArgs.logLevel, daemonArgs.logFile, daemonArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger: %v", err)
+		fmt.Printf("failed to initialize logger: %v", err)
+		return nil
 	}
-	dotlog := dotlog.NewDotLog("daemon")
 
 	d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
 	err = d.Uninstall()

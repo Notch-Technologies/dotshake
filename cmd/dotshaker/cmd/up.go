@@ -8,7 +8,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -58,12 +57,11 @@ var upCmd = &ffcli.Command{
 }
 
 func execUp(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(upArgs.logLevel, upArgs.logFile, upArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker up", upArgs.logLevel, upArgs.logFile, upArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
+		fmt.Printf("failed to initialize logger. because %v", err)
+		return nil
 	}
-
-	dotlog := dotlog.NewDotLog("dotshaker up")
 
 	clientCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -132,6 +130,7 @@ func login(
 	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
+		return err
 	}
 
 	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())

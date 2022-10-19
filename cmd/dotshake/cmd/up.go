@@ -8,7 +8,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -59,12 +58,11 @@ var upCmd = &ffcli.Command{
 // if not, prompt the user to start it.
 //
 func execUp(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(upArgs.logLevel, upArgs.logFile, upArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshake up", upArgs.logLevel, upArgs.logFile, upArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
-		return err
+		fmt.Printf("failed to initialize logger. because %v", err)
+		return nil
 	}
-	dotlog := dotlog.NewDotLog("dotshake up")
 
 	clientCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()

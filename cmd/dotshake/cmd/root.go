@@ -81,11 +81,13 @@ func initializeDotShakeConf(
 			Timeout:             10 * time.Second,
 			PermitWithoutStream: true,
 		}))
-
-	serverClient = grpc_client.NewServerClient(gconn, dotlog)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to connect grpc server client, because %v", err)
 	}
+
+	dotlog.Logger.Debugf("connect to dotshake server")
+
+	serverClient = grpc_client.NewServerClient(gconn, dotlog)
 
 	return mPubKey, serverClient, clientConf
 }

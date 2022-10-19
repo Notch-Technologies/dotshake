@@ -49,14 +49,11 @@ var loginCmd = &ffcli.Command{
 }
 
 func execLogin(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(loginArgs.logLevel, loginArgs.logFile, loginArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshake login", loginArgs.logLevel, loginArgs.logFile, loginArgs.debug)
 	if err != nil {
 		fmt.Printf("failed to initialize logger. because %v\n", err)
-		return err
+		return nil
 	}
-
-	dotlog := dotlog.NewDotLog("dotshake login")
-	dotlog.Logger.Debugf("initialize logger")
 
 	clientCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -70,6 +67,7 @@ func execLogin(ctx context.Context, args []string) error {
 	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, loginArgs.debug, serverClient)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
+		return err
 	}
 
 	dotlog.Logger.Infof("Your dotshake ip => [%s/%s]\n", ip, cidr)
@@ -89,6 +87,7 @@ func login(
 	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to parse wg private key. because %v", err)
+		return "", "", err
 	}
 
 	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())

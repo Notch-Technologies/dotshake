@@ -94,6 +94,7 @@ func setupGrpcServerClient(
 	serverClient := grpc_client.NewServerClient(sconn, dotlog)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to connect server client, because %v", err)
+		return nil, err
 	}
 
 	return serverClient, err
@@ -113,6 +114,7 @@ func setupGrpcSignalClient(
 	)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to connect signal client, because %v", err)
+		return nil, err
 	}
 
 	connState := conn.NewConnectedState()

@@ -43,12 +43,11 @@ var downCmd = &ffcli.Command{
 // uninstall dotshaker and delete wireguard interface
 //
 func execDown(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(downArgs.logLevel, downArgs.logFile, downArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker down", downArgs.logLevel, downArgs.logFile, downArgs.debug)
 	if err != nil {
 		fmt.Println("failed to initialize logger")
 		return nil
 	}
-	dotlog := dotlog.NewDotLog("dotshaker down")
 
 	d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
 
@@ -70,17 +69,13 @@ func execDown(ctx context.Context, args []string) error {
 
 	err = r.Stop()
 	if err != nil {
-		dotlog.Logger.Errorf("failed to stop dotshaker, %s", err.Error())
 		fmt.Println("failed to uninstall dotshake")
-
 		return nil
 	}
 
 	err = d.Uninstall()
 	if err != nil {
-		dotlog.Logger.Errorf("failed to uninstall dotshaker, %s", err.Error())
 		fmt.Println("failed to uninstall dotshake")
-
 		return nil
 	}
 
