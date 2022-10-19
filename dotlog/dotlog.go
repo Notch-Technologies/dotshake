@@ -20,21 +20,26 @@ const (
 	ErrorLevelStr   string = "error"
 )
 
-var (
-	globalLogger *zap.Logger
-)
+// var (
+// 	globalLogger *zap.Logger
+// )
 
 type DotLog struct {
 	Logger *zap.SugaredLogger
 }
 
-func NewDotLog(name string) *DotLog {
-	return &DotLog{
-		Logger: globalLogger.Named(name).Sugar(),
+func NewDotLog(name string, logLevel string, logFile string, dev bool) (*DotLog, error) {
+	l, err := initDotLog(logLevel, logFile, dev)
+	if err != nil {
+		return nil, err
 	}
+
+	return &DotLog{
+		Logger: l.Named(name).Sugar(),
+	}, nil
 }
 
-func InitDotLog(logLevel string, logFile string, dev bool) error {
+func initDotLog(logLevel string, logFile string, dev bool) (*zap.Logger, error) {
 	var level zapcore.Level
 	switch logLevel {
 	case DebugLevelStr:
@@ -46,7 +51,7 @@ func InitDotLog(logLevel string, logFile string, dev bool) error {
 	case ErrorLevelStr:
 		level = zap.ErrorLevel
 	default:
-		return fmt.Errorf("unknown log level %s", logLevel)
+		return nil, fmt.Errorf("unknown log level %s", logLevel)
 	}
 
 	encoderConfig := zapcore.EncoderConfig{
@@ -84,15 +89,14 @@ func InitDotLog(logLevel string, logFile string, dev bool) error {
 		OutputPaths:   []string{fmt.Sprintf("lumberjack:%s", logFile), "stderr"},
 	}
 
-	_globalLogger, err := loggerConfig.Build()
+	buildedLogger, err := loggerConfig.Build()
 	if err != nil {
 		panic(fmt.Sprintf("build zap logger from config error: %v", err))
 	}
 
-	zap.ReplaceGlobals(_globalLogger)
-	globalLogger = _globalLogger
+	zap.ReplaceGlobals(buildedLogger)
 
-	return nil
+	return buildedLogger, nil
 }
 
 type lumberjackSink struct {

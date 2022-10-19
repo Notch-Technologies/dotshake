@@ -35,7 +35,7 @@ func DefaultClientLogFile() string {
 }
 
 func DefaultDotShakerLogFile() string {
-	return "/var/log/dotshaker/client.log"
+	return "var/log/dotshaker/client.log"
 }
 
 func MkStateDir(dirPath string) error {

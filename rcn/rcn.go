@@ -22,18 +22,13 @@ import (
 )
 
 type Rcn struct {
-	cp *controlplane.ControlPlane
-
+	cp           *controlplane.ControlPlane
 	serverClient grpc.ServerClientImpl
-
-	clientConf *conf.ClientConf
-
-	iface *iface.Iface
-
-	mk string
-	mu *sync.Mutex
-
-	dotlog *dotlog.DotLog
+	clientConf   *conf.ClientConf
+	iface        *iface.Iface
+	mk           string
+	mu           *sync.Mutex
+	dotlog       *dotlog.DotLog
 }
 
 func NewRcn(
@@ -55,48 +50,40 @@ func NewRcn(
 	)
 
 	return &Rcn{
-		cp: cp,
-
+		cp:           cp,
 		serverClient: serverClient,
-
-		clientConf: clientConf,
-
-		mk: mk,
-
-		mu: &sync.Mutex{},
-
-		dotlog: dotlog,
+		clientConf:   clientConf,
+		mk:           mk,
+		mu:           &sync.Mutex{},
+		dotlog:       dotlog,
 	}
 }
 
 func (r *Rcn) Start() {
-	go func() {
-		err := r.createIface()
-		if err != nil {
-			r.dotlog.Logger.Errorf("failed to create iface, %s", err.Error())
-		}
+	err := r.createIface()
+	if err != nil {
+		r.dotlog.Logger.Errorf("failed to create iface, %s", err.Error())
+	}
 
-		err = r.cp.ConfigureStunTurnConf()
-		if err != nil {
-			r.dotlog.Logger.Errorf("failed to set up puncher, %s", err.Error())
-		}
+	err = r.cp.ConfigureStunTurnConf()
+	if err != nil {
+		r.dotlog.Logger.Errorf("failed to set up puncher, %s", err.Error())
+	}
 
-		r.cp.ConnectSignalServer()
+	go r.cp.ConnectSignalServer()
 
-		go r.cp.WaitForRemoteConn()
+	go r.cp.WaitForRemoteConn()
 
-		// r.cp.StartHangoutMachines()
+	go r.cp.SyncRemoteMachine()
 
-		go r.cp.SyncRemoteMachine()
-
-		r.dotlog.Logger.Debugf("started rcn")
-	}()
+	r.dotlog.Logger.Debugf("started rcn")
 }
 
 func (r *Rcn) createIface() error {
 	wgPrivateKey, err := wgtypes.ParseKey(r.clientConf.WgPrivateKey)
 	if err != nil {
 		r.dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
+		return err
 	}
 
 	m, err := r.serverClient.GetMachine(r.mk, wgPrivateKey.PublicKey().String())

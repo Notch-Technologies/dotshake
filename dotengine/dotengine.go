@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/Notch-Technologies/dotshake/client/grpc"
-	"github.com/Notch-Technologies/dotshake/dotengine/peer"
 	"github.com/Notch-Technologies/dotshake/dotengine/wonderwall"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/rcn/rcnsock"
@@ -28,8 +27,6 @@ type DotEngine struct {
 	wgPrivKey string
 	wgPort    int
 	blackList []string
-
-	peer *peer.Peer
 
 	sock *rcnsock.RcnSock
 
@@ -74,8 +71,6 @@ func NewDotEngine(
 		wgPort:    wireguard.WgPort,
 		blackList: blackList,
 
-		peer: peer.NewPeer(serverClient, mk, dotlog),
-
 		sock: sock,
 
 		ctx:    ctx,
@@ -97,7 +92,6 @@ func (d *DotEngine) Start() error {
 	defer d.mu.Unlock()
 
 	d.startWonderWall()
-	// d.peer.Up()
 
 	go func() {
 		// do somethings

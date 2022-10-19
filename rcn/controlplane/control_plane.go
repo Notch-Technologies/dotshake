@@ -129,7 +129,7 @@ func (c *ControlPlane) ConfigureStunTurnConf() error {
 	return nil
 }
 
-func (c *ControlPlane) receiveSignalingProcess(
+func (c *ControlPlane) receiveSignalRequest(
 	remotemk string,
 	msgType negotiation.NegotiationType,
 	peer *webrtc.Ice,
@@ -184,7 +184,8 @@ func (c *ControlPlane) ConnectSignalServer() {
 				}
 			}
 
-			err := c.receiveSignalingProcess(
+			// after the first time
+			err := c.receiveSignalRequest(
 				res.GetDstPeerMachineKey(),
 				res.GetType(),
 				peer,
@@ -195,6 +196,7 @@ func (c *ControlPlane) ConnectSignalServer() {
 			if err != nil {
 				return err
 			}
+
 			return nil
 		})
 		if err != nil {
@@ -282,13 +284,11 @@ func (c *ControlPlane) configureIce(peer *machine.RemotePeer, myip, mycidr strin
 	remoteip := strings.Join(peer.GetAllowedIPs(), ",")
 	i := webrtc.NewIce(
 		c.signalClient,
-
+		c.serverClient,
 		c.sock,
-
 		peer.RemoteWgPubKey,
 		remoteip,
 		peer.GetRemoteClientMachineKey(),
-
 		myip,
 		mycidr,
 		k,
@@ -296,40 +296,13 @@ func (c *ControlPlane) configureIce(peer *machine.RemotePeer, myip, mycidr strin
 		c.clientConf.TunName,
 		pk,
 		c.mk,
-
 		c.stconf,
 		c.clientConf.BlackList,
-
 		c.dotlog,
 		c.ch,
 	)
 
 	return i, nil
-}
-
-func (c *ControlPlane) NotifyRemotePeersConn(connPeers []*machine.RemotePeer, ip, cidr string) error {
-	for _, p := range connPeers {
-		c.dotlog.Logger.Debugf("wanna connect to remote machine => [%s]", p.GetRemoteClientMachineKey())
-
-		rmk := p.GetRemoteClientMachineKey()
-		_, ok := c.peerConns[rmk]
-
-		if !ok {
-			i, err := c.configureIce(p, ip, cidr)
-			if err != nil {
-				return err
-			}
-
-			c.peerConns[rmk] = i
-			c.waitForRemoteConnCh <- i
-			continue
-		}
-
-		c.dotlog.Logger.Debugf("[%s] has [%s] peer connection,", c.mk, rmk)
-
-		return nil
-	}
-	return nil
 }
 
 func (c *ControlPlane) isExistPeer(remoteMachineKey string) bool {
@@ -364,47 +337,6 @@ func (c *ControlPlane) WaitForRemoteConn() {
 		}
 	}
 }
-
-// ConnectToHangoutMachines to keep the Peer's information up to date asynchronously
-// notify here when another machine or itself joinsHangOutMachines
-// when coming adding new peer or initial sync
-//
-// func (c *ControlPlane) StartHangoutMachines() {
-// 	go func() {
-// 		c.serverClient.ConnectToHangoutMachines(c.mk, func(res *machine.HangOutMachinesResponse) error {
-// 			c.mu.Lock()
-// 			defer c.mu.Unlock()
-
-// 			if res.GetRemotePeers() != nil {
-// 				c.dotlog.Logger.Debugf("got remote peers => %v", res.GetRemotePeers())
-// 				err := c.syncRemotePeerConfig(res.GetRemotePeers())
-// 				if err != nil {
-// 					return err
-// 				}
-// 			}
-
-// 			// TODO: (shinta) it seems a little confusing. will refactoring. https://github.com/Notch-Technologies/dotshake/issues/21
-// 			// initialize to maintain agent integrity when a disconnected Machine reconnects
-// 			//
-// 			if res.GetHangOutType() == machine.HangOutType_DISCONNECT {
-// 				if peer, ok := c.peerConns[res.TargetMachineKey]; ok {
-// 					err := peer.Setup()
-// 					if err != nil {
-// 						c.dotlog.Logger.Errorf("failed to resetup %s, %s", res.TargetMachineKey, err.Error())
-// 					}
-// 				}
-// 				return nil
-// 			}
-
-// 			err := c.NotifyRemotePeersConn(res.GetRemotePeers(), res.Ip, res.Cidr)
-// 			if err != nil {
-// 				return err
-// 			}
-
-// 			return nil
-// 		})
-// 	}()
-// }
 
 // maintain flexible connections by updating remote machines
 // information on a regular basis, rather than only when other Machines join

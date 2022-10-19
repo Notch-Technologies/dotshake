@@ -3,7 +3,7 @@ module github.com/Notch-Technologies/dotshake
 go 1.16
 
 require (
-	github.com/Notch-Technologies/client-go v0.0.0-20220702075907-b3b9b9cbb03a
+	github.com/Notch-Technologies/client-go v0.0.0-20221007052820-89b8c4a37a44
 	github.com/peterbourgon/ff/v2 v2.0.1
 	go.uber.org/zap v1.21.0
 	go4.org/mem v0.0.0-20210711025021-927187094b94
