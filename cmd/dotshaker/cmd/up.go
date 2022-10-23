@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
 	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
@@ -22,7 +21,6 @@ import (
 	"github.com/Notch-Technologies/dotshake/rcn"
 	"github.com/Notch-Technologies/dotshake/types/flagtype"
 	"github.com/peterbourgon/ff/v2/ffcli"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 var upArgs struct {
@@ -86,9 +84,10 @@ func execUp(ctx context.Context, args []string) error {
 	// this is because you log in when you do dotshake up,
 	// and then you make dotshaker work on the dotshake command side!This is because you log in when you do dotshake up,
 	//  and then you make dotshaker work on the dotshake command side!
-	err = login(ctx, dotlog, conf.Spec.GetServerHost(), conf.Spec.WgPrivateKey, conf.MachinePubKey, upArgs.debug, conf.ServerClient)
+	_, err = conf.ServerClient.Login(conf.MachinePubKey, conf.Spec.WgPrivateKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
+		return nil
 	}
 
 	ch := make(chan struct{})
@@ -131,45 +130,4 @@ func execUp(ctx context.Context, args []string) error {
 	r.Stop()
 
 	return nil
-}
-
-func login(
-	ctx context.Context,
-	dotlog *dotlog.DotLog,
-	serverHost string,
-	wgPrivKey, mkPubKey string,
-	isDev bool,
-	serverClient grpc_client.ServerClientImpl,
-) error {
-	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
-	if err != nil {
-		dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
-		return err
-	}
-
-	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())
-	if err != nil {
-		return err
-	}
-
-	// TODO: (shinta) use the open command to make URL pages open by themselves,
-	// you need to sign in or let either process if you are not signed in or signed up before accessing the loginurl.
-	if !res.IsRegistered {
-		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
-		msg, err := serverClient.ConnectStreamPeerLoginSession(mkPubKey)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Your dotshake ip => [%s/%s]\n", msg.Ip, msg.Cidr)
-		fmt.Printf("Successful login\n")
-
-		return nil
-	}
-
-	fmt.Printf("Your dotshake ip => [%s/%s]\n", res.Ip, res.Cidr)
-	fmt.Printf("Successful login\n")
-
-	return nil
-
 }

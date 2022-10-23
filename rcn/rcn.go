@@ -84,16 +84,16 @@ func (r *Rcn) createIface() error {
 		return err
 	}
 
-	m, err := r.serverClient.GetMachine(r.mk, wgPrivateKey.PublicKey().String())
+	res, err := r.serverClient.Login(r.mk, wgPrivateKey.PublicKey().String())
 	if err != nil {
 		return err
 	}
 
-	if !m.IsRegistered {
+	if !res.IsRegistered {
 		r.dotlog.Logger.Warnf("please login with `dotshake login` and try again")
 	}
 
-	r.iface = iface.NewIface(r.conf.Spec.TunName, r.conf.Spec.WgPrivateKey, m.Ip, m.Cidr, r.dotlog)
+	r.iface = iface.NewIface(r.conf.Spec.TunName, r.conf.Spec.WgPrivateKey, res.Ip, res.Cidr, r.dotlog)
 	return iface.CreateIface(r.iface, r.dotlog)
 }
 

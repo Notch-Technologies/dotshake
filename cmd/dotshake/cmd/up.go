@@ -83,17 +83,9 @@ func execUp(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	ip, cidr, err := login(
-		ctx, dotlog,
-		c.Spec.GetServerHost(),
-		c.Spec.WgPrivateKey,
-		c.MachinePubKey,
-		upArgs.debug,
-		c.ServerClient,
-	)
+	res, err := c.ServerClient.Login(c.MachinePubKey, c.Spec.WgPrivateKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
-		fmt.Println("failed to login")
 		return nil
 	}
 
@@ -109,8 +101,8 @@ func execUp(ctx context.Context, args []string) error {
 		dotlog,
 		c.Spec.TunName,
 		c.MachinePubKey,
-		ip,
-		cidr,
+		res.Ip,
+		res.Cidr,
 		c.Spec.WgPrivateKey,
 		c.Spec.BlackList,
 	)

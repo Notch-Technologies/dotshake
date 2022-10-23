@@ -9,6 +9,8 @@ github.com/Notch-Technologies/client-go v0.0.0-20220927085259-300ec506c734 h1:Vp
 github.com/Notch-Technologies/client-go v0.0.0-20220927085259-300ec506c734/go.mod h1:H6kztb5A10HRS2x9v8sfBe3R18GVaVO0t24PtCyeXOU=
 github.com/Notch-Technologies/client-go v0.0.0-20221007052820-89b8c4a37a44 h1:8M+Xb9GK/HHNTFFAr/z63x7YLHbJ0fbg1tcgBYjWScA=
 github.com/Notch-Technologies/client-go v0.0.0-20221007052820-89b8c4a37a44/go.mod h1:H6kztb5A10HRS2x9v8sfBe3R18GVaVO0t24PtCyeXOU=
+github.com/Notch-Technologies/client-go v0.0.0-20221023191448-19077366d769 h1:q/pst5LzUpIdDBDnjyNCW+oD4yMDW+m0fps+Ni/pkLw=
+github.com/Notch-Technologies/client-go v0.0.0-20221023191448-19077366d769/go.mod h1:H6kztb5A10HRS2x9v8sfBe3R18GVaVO0t24PtCyeXOU=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=

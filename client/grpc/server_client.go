@@ -6,6 +6,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/daemon"
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/login_session"
@@ -13,13 +14,14 @@ import (
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/system"
 	"github.com/Notch-Technologies/dotshake/utils"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ServerClientImpl interface {
-	GetMachine(mk, wgPubKey string) (*machine.GetMachineResponse, error)
+	Login(mk, wgPrivKey string) (*machine.LoginResponse, error)
 	SyncRemoteMachinesConfig(mk string) (*machine.SyncMachinesResponse, error)
 	ConnectStreamPeerLoginSession(mk string) (*login_session.PeerLoginSessionResponse, error)
 	Connect(mk string) (*daemon.GetConnectionStatusResponse, error)
@@ -52,23 +54,39 @@ func NewServerClient(
 
 // TODO: (shinta) remove SIGNAL_HOST and SIGNAL_PORT from env,
 // use the SignalHost and SignalPort in response
-func (c *ServerClient) GetMachine(mk, wgPubKey string) (*machine.GetMachineResponse, error) {
-	md := metadata.New(map[string]string{utils.MachineKey: mk, utils.WgPubKey: wgPubKey})
-	ctx := metadata.NewOutgoingContext(c.ctx, md)
+func (c *ServerClient) Login(mk, wgPrivKey string) (*machine.LoginResponse, error) {
+	var (
+		ip   string
+		cidr string
+	)
 
-	res, err := c.machineClient.GetMachine(ctx, &emptypb.Empty{})
+	parsedKey, err := wgtypes.ParseKey(wgPrivKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return &machine.GetMachineResponse{
-		IsRegistered: res.IsRegistered,
-		LoginUrl:     res.LoginUrl,
-		Ip:           res.Ip,
-		Cidr:         res.Cidr,
-		SignalHost:   res.SignalHost,
-		SignalPort:   res.SignalPort,
-	}, nil
+	md := metadata.New(map[string]string{utils.MachineKey: mk, utils.WgPubKey: parsedKey.PublicKey().String()})
+	ctx := metadata.NewOutgoingContext(c.ctx, md)
+
+	res, err := c.machineClient.Login(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	if !res.IsRegistered {
+		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
+		msg, err := c.ConnectStreamPeerLoginSession(mk)
+		if err != nil {
+			return nil, err
+		}
+		ip = msg.Ip
+		cidr = msg.Cidr
+	}
+
+	fmt.Printf("Your dotshake ip => [%s/%s]\n", ip, cidr)
+	fmt.Printf("Successful login\n")
+
+	return res, nil
 }
 
 func (c *ServerClient) ConnectStreamPeerLoginSession(mk string) (*login_session.PeerLoginSessionResponse, error) {

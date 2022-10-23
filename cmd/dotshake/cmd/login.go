@@ -10,13 +10,11 @@ import (
 	"fmt"
 	"time"
 
-	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
 	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/paths"
 	"github.com/Notch-Technologies/dotshake/types/flagtype"
 	"github.com/peterbourgon/ff/v2/ffcli"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 var loginArgs struct {
@@ -71,53 +69,11 @@ func execLogin(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	ip, cidr, err := login(ctx, dotlog, c.Spec.GetServerHost(), c.Spec.WgPrivateKey, c.MachinePubKey, loginArgs.debug, c.ServerClient)
+	_, err = c.ServerClient.Login(c.MachinePubKey, c.Spec.WgPrivateKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
-		return err
+		return nil
 	}
-
-	dotlog.Logger.Infof("Your dotshake ip => [%s/%s]\n", ip, cidr)
-	dotlog.Logger.Infof("Successful login\n")
 
 	return nil
-}
-
-func login(
-	ctx context.Context,
-	dotlog *dotlog.DotLog,
-	serverHost string,
-	wgPrivKey, mkPubKey string,
-	isDev bool,
-	serverClient grpc_client.ServerClientImpl,
-) (ip string, cidr string, err error) {
-	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
-	if err != nil {
-		dotlog.Logger.Warnf("failed to parse wg private key. because %v", err)
-		return "", "", err
-	}
-
-	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())
-	if err != nil {
-		return ip, cidr, err
-	}
-
-	// TODO: (shinta) use the open command to make URL pages open by themselves
-	if !res.IsRegistered {
-		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
-		msg, err := serverClient.ConnectStreamPeerLoginSession(mkPubKey)
-		if err != nil {
-			return ip, cidr, err
-		}
-
-		ip = msg.Ip
-		cidr = msg.Cidr
-
-		return ip, cidr, err
-	}
-
-	ip = res.Ip
-	cidr = res.Cidr
-
-	return ip, cidr, err
 }
