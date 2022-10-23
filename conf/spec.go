@@ -19,7 +19,10 @@ import (
 	"github.com/Notch-Technologies/dotshake/utils"
 )
 
-type ClientConf struct {
+// spec is a dotshake config json
+// path's here => '/etc/dotshake/client.json'
+//
+type Spec struct {
 	WgPrivateKey string   `json:"wg_private_key"`
 	ServerHost   string   `json:"server_host"`
 	ServerPort   uint     `json:"server_port"`
@@ -35,14 +38,14 @@ type ClientConf struct {
 	dotlog *dotlog.DotLog
 }
 
-func NewClientConf(
+func NewSpec(
 	path string,
 	serverHost string, serverPort uint,
 	signalHost string, signalPort uint,
 	isDebug bool,
 	dl *dotlog.DotLog,
-) (*ClientConf, error) {
-	return &ClientConf{
+) (*Spec, error) {
+	return &Spec{
 		ServerHost: serverHost,
 		ServerPort: serverPort,
 		SignalHost: signalHost,
@@ -53,7 +56,7 @@ func NewClientConf(
 	}, nil
 }
 
-func (c *ClientConf) writeClientConf(
+func (s *Spec) writeSpec(
 	wgPrivateKey, tunName string,
 	serverHost string,
 	serverPort uint,
@@ -61,58 +64,58 @@ func (c *ClientConf) writeClientConf(
 	signalPort uint,
 	blackList []string,
 	presharedKey string,
-) *ClientConf {
-	if err := os.MkdirAll(filepath.Dir(c.path), 0755); err != nil {
-		c.dotlog.Logger.Warnf("failed to create directory with %s, because %s", c.path, err.Error())
+) *Spec {
+	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {
+		s.dotlog.Logger.Warnf("failed to create directory with %s, because %s", s.path, err.Error())
 	}
 
-	c.ServerHost = serverHost
-	c.ServerPort = serverPort
-	c.SignalHost = signalHost
-	c.SignalPort = signalPort
-	c.WgPrivateKey = wgPrivateKey
-	c.TunName = tunName
-	c.BlackList = blackList
+	s.ServerHost = serverHost
+	s.ServerPort = serverPort
+	s.SignalHost = signalHost
+	s.SignalPort = signalPort
+	s.WgPrivateKey = wgPrivateKey
+	s.TunName = tunName
+	s.BlackList = blackList
 
-	b, err := json.MarshalIndent(*c, "", "\t")
+	b, err := json.MarshalIndent(*s, "", "\t")
 	if err != nil {
 		panic(err)
 	}
 
-	if err = utils.AtomicWriteFile(c.path, b, 0755); err != nil {
+	if err = utils.AtomicWriteFile(s.path, b, 0755); err != nil {
 		panic(err)
 	}
 
-	return c
+	return s
 }
 
-func (c *ClientConf) CreateClientConf() *ClientConf {
-	b, err := ioutil.ReadFile(c.path)
+func (s *Spec) CreateSpec() *Spec {
+	b, err := ioutil.ReadFile(s.path)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		privKey, err := key.NewGenerateKey()
 		if err != nil {
-			c.dotlog.Logger.Error("failed to generate key for wireguard")
+			s.dotlog.Logger.Error("failed to generate key for wireguard")
 			panic(err)
 		}
 
-		return c.writeClientConf(
+		return s.writeSpec(
 			privKey,
 			tun.TunName(),
-			c.ServerHost,
-			c.ServerPort,
-			c.SignalHost,
-			c.SignalPort,
+			s.ServerHost,
+			s.ServerPort,
+			s.SignalHost,
+			s.SignalPort,
 			[]string{tun.TunName()},
 			"",
 		)
 	case err != nil:
-		c.dotlog.Logger.Errorf("%s could not be read. exception error: %s", c.path, err.Error())
+		s.dotlog.Logger.Errorf("%s could not be read. exception error: %s", s.path, err.Error())
 		panic(err)
 	default:
-		var core ClientConf
-		if err := json.Unmarshal(b, &core); err != nil {
-			c.dotlog.Logger.Warnf("can not read client config file, because %v", err)
+		var spec Spec
+		if err := json.Unmarshal(b, &spec); err != nil {
+			s.dotlog.Logger.Warnf("can not read client config file, because %v", err)
 		}
 
 		var serverhost string
@@ -120,64 +123,64 @@ func (c *ClientConf) CreateClientConf() *ClientConf {
 
 		// TODO: (shinta) refactor
 		// for daemon
-		if c.ServerHost == "" {
-			serverhost = core.ServerHost
+		if s.ServerHost == "" {
+			serverhost = spec.ServerHost
 		} else {
-			serverhost = c.ServerHost
+			serverhost = s.ServerHost
 		}
 
-		if c.SignalHost == "" {
-			signalhost = core.SignalHost
+		if s.SignalHost == "" {
+			signalhost = spec.SignalHost
 		} else {
-			signalhost = c.SignalHost
+			signalhost = s.SignalHost
 		}
 
-		return c.writeClientConf(
-			core.WgPrivateKey,
-			core.TunName,
+		return s.writeSpec(
+			spec.WgPrivateKey,
+			spec.TunName,
 			serverhost,
-			c.ServerPort,
+			s.ServerPort,
 			signalhost,
-			c.SignalPort,
-			core.BlackList,
+			s.SignalPort,
+			spec.BlackList,
 			"",
 		)
 	}
 }
 
-func (c *ClientConf) GetClientConf() (*ClientConf, error) {
-	var cc ClientConf
-	b, err := ioutil.ReadFile(c.path)
+func (s *Spec) GetClientConf() (*Spec, error) {
+	var spec Spec
+	b, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := json.Unmarshal(b, &cc); err != nil {
-		c.dotlog.Logger.Warnf("can not read client config file, because %v", err)
+	if err := json.Unmarshal(b, &spec); err != nil {
+		s.dotlog.Logger.Warnf("can not read client config file, because %v", err)
 		return nil, err
 	}
 
-	cc.dotlog = c.dotlog
+	s.dotlog = s.dotlog
 
-	return &cc, nil
+	return &spec, nil
 }
 
 // format like this => 127.0.0.1:443, ctl.dotshake.com:443
 //
-func (c *ClientConf) GetServerHost() string {
-	return c.buildHost(c.ServerHost, c.ServerPort)
+func (s *Spec) GetServerHost() string {
+	return s.buildHost(s.ServerHost, s.ServerPort)
 }
 
 // format like this => 127.0.0.1:443, signal.dotshake.com:443
 //
-func (c *ClientConf) GetSignalHost() string {
-	return c.buildHost(c.SignalHost, c.SignalPort)
+func (s *Spec) GetSignalHost() string {
+	return s.buildHost(s.SignalHost, s.SignalPort)
 }
 
-func (c *ClientConf) buildHost(host string, port uint) string {
+func (s *Spec) buildHost(host string, port uint) string {
 	var h string
 	var p string
-	if !c.isDebug {
+	if !s.isDebug {
 		h = strings.Replace(host, "https://", "", -1)
 	} else {
 		h = strings.Replace(host, "http://", "", -1)

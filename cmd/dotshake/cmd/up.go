@@ -14,6 +14,7 @@ import (
 	"time"
 
 	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotengine"
@@ -67,12 +68,29 @@ func execUp(ctx context.Context, args []string) error {
 	clientCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	mPubKey, serverClient, clientConf := initializeDotShakeConf(
-		clientCtx, dotlog, upArgs.debug, upArgs.clientPath, upArgs.serverHost, uint(upArgs.serverPort),
-		upArgs.signalHost, uint(upArgs.signalPort),
+	c, err := conf.NewConf(
+		clientCtx,
+		upArgs.clientPath,
+		upArgs.debug,
+		upArgs.serverHost,
+		uint(upArgs.serverPort),
+		upArgs.signalHost,
+		uint(upArgs.signalPort),
+		dotlog,
 	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
 
-	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
+	ip, cidr, err := login(
+		ctx, dotlog,
+		c.Spec.GetServerHost(),
+		c.Spec.WgPrivateKey,
+		c.MachinePubKey,
+		upArgs.debug,
+		c.ServerClient,
+	)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
 		fmt.Println("failed to login")
@@ -85,7 +103,17 @@ func execUp(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	err = upEngine(ctx, serverClient, dotlog, clientConf.TunName, mPubKey, ip, cidr, clientConf.WgPrivateKey, clientConf.BlackList)
+	err = upEngine(
+		ctx,
+		c.ServerClient,
+		dotlog,
+		c.Spec.TunName,
+		c.MachinePubKey,
+		ip,
+		cidr,
+		c.Spec.WgPrivateKey,
+		c.Spec.BlackList,
+	)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to start engine. because %v", err)
 		return err

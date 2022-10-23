@@ -14,6 +14,7 @@ import (
 	"time"
 
 	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotlog"
@@ -66,20 +67,33 @@ func execUp(ctx context.Context, args []string) error {
 	clientCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	signalClient, serverClient, clientConf, mPubKey := initializeDotShakerConf(clientCtx, upArgs.clientPath, upArgs.debug, upArgs.serverHost, uint(upArgs.serverPort), upArgs.signalHost, uint(upArgs.signalPort), dotlog)
+	conf, err := conf.NewConf(
+		clientCtx,
+		upArgs.clientPath,
+		upArgs.debug,
+		upArgs.serverHost,
+		uint(upArgs.serverPort),
+		upArgs.signalHost,
+		uint(upArgs.signalPort),
+		dotlog,
+	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
 
 	// TODO: (shinta) remove login process,
 	// this is because you log in when you do dotshake up,
 	// and then you make dotshaker work on the dotshake command side!This is because you log in when you do dotshake up,
 	//  and then you make dotshaker work on the dotshake command side!
-	err = login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
+	err = login(ctx, dotlog, conf.Spec.GetServerHost(), conf.Spec.WgPrivateKey, conf.MachinePubKey, upArgs.debug, conf.ServerClient)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
 	}
 
 	ch := make(chan struct{})
 
-	r := rcn.NewRcn(signalClient, serverClient, clientConf, mPubKey, ch, dotlog)
+	r := rcn.NewRcn(conf, conf.MachinePubKey, ch, dotlog)
 
 	if upArgs.daemon {
 		d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)

@@ -24,7 +24,7 @@ import (
 type Rcn struct {
 	cp           *controlplane.ControlPlane
 	serverClient grpc.ServerClientImpl
-	clientConf   *conf.ClientConf
+	conf         *conf.Conf
 	iface        *iface.Iface
 	mk           string
 	mu           *sync.Mutex
@@ -32,27 +32,25 @@ type Rcn struct {
 }
 
 func NewRcn(
-	signalClient grpc.SignalClientImpl,
-	serverClient grpc.ServerClientImpl,
-	clientConf *conf.ClientConf,
+	conf *conf.Conf,
 	mk string,
 	ch chan struct{},
 	dotlog *dotlog.DotLog,
 ) *Rcn {
 	cp := controlplane.NewControlPlane(
-		signalClient,
-		serverClient,
+		conf.SignalClient,
+		conf.ServerClient,
 		rcnsock.NewRcnSock(dotlog, ch),
 		mk,
-		clientConf,
+		conf,
 		ch,
 		dotlog,
 	)
 
 	return &Rcn{
 		cp:           cp,
-		serverClient: serverClient,
-		clientConf:   clientConf,
+		serverClient: conf.ServerClient,
+		conf:         conf,
 		mk:           mk,
 		mu:           &sync.Mutex{},
 		dotlog:       dotlog,
@@ -80,7 +78,7 @@ func (r *Rcn) Start() {
 }
 
 func (r *Rcn) createIface() error {
-	wgPrivateKey, err := wgtypes.ParseKey(r.clientConf.WgPrivateKey)
+	wgPrivateKey, err := wgtypes.ParseKey(r.conf.Spec.WgPrivateKey)
 	if err != nil {
 		r.dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
 		return err
@@ -95,7 +93,7 @@ func (r *Rcn) createIface() error {
 		r.dotlog.Logger.Warnf("please login with `dotshake login` and try again")
 	}
 
-	r.iface = iface.NewIface(r.clientConf.TunName, r.clientConf.WgPrivateKey, m.Ip, m.Cidr, r.dotlog)
+	r.iface = iface.NewIface(r.conf.Spec.TunName, r.conf.Spec.WgPrivateKey, m.Ip, m.Cidr, r.dotlog)
 	return iface.CreateIface(r.iface, r.dotlog)
 }
 

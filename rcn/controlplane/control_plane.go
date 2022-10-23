@@ -33,10 +33,10 @@ type ControlPlane struct {
 
 	sock *rcnsock.RcnSock
 
-	peerConns  map[string]*webrtc.Ice //  with ice structure per clientmachinekey
-	mk         string
-	clientConf *conf.ClientConf
-	stconf     *webrtc.StunTurnConfig
+	peerConns map[string]*webrtc.Ice //  with ice structure per clientmachinekey
+	mk        string
+	conf      *conf.Conf
+	stconf    *webrtc.StunTurnConfig
 
 	mu                  *sync.Mutex
 	ch                  chan struct{}
@@ -50,7 +50,7 @@ func NewControlPlane(
 	serverClient grpc.ServerClientImpl,
 	sock *rcnsock.RcnSock,
 	mk string,
-	clientConf *conf.ClientConf,
+	conf *conf.Conf,
 	ch chan struct{},
 	dotlog *dotlog.DotLog,
 ) *ControlPlane {
@@ -60,9 +60,9 @@ func NewControlPlane(
 
 		sock: sock,
 
-		peerConns:  make(map[string]*webrtc.Ice),
-		mk:         mk,
-		clientConf: clientConf,
+		peerConns: make(map[string]*webrtc.Ice),
+		mk:        mk,
+		conf:      conf,
 
 		mu:                  &sync.Mutex{},
 		ch:                  ch,
@@ -267,14 +267,14 @@ func (c *ControlPlane) syncRemotePeerConfig(remotePeers []*machine.RemotePeer) e
 }
 
 func (c *ControlPlane) configureIce(peer *machine.RemotePeer, myip, mycidr string) (*webrtc.Ice, error) {
-	k, err := wgtypes.ParseKey(c.clientConf.WgPrivateKey)
+	k, err := wgtypes.ParseKey(c.conf.MachinePubKey)
 	if err != nil {
 		return nil, err
 	}
 
 	var pk string
-	if c.clientConf.PreSharedKey != "" {
-		k, err := wgtypes.ParseKey(c.clientConf.PreSharedKey)
+	if c.conf.Spec.PreSharedKey != "" {
+		k, err := wgtypes.ParseKey(c.conf.Spec.PreSharedKey)
 		if err != nil {
 			return nil, err
 		}
@@ -293,11 +293,11 @@ func (c *ControlPlane) configureIce(peer *machine.RemotePeer, myip, mycidr strin
 		mycidr,
 		k,
 		wireguard.WgPort,
-		c.clientConf.TunName,
+		c.conf.Spec.TunName,
 		pk,
 		c.mk,
 		c.stconf,
-		c.clientConf.BlackList,
+		c.conf.Spec.BlackList,
 		c.dotlog,
 		c.ch,
 	)

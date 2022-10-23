@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotlog"
@@ -60,12 +61,22 @@ func execDown(ctx context.Context, args []string) error {
 	clientCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	signalClient, serverClient, clientConf, mPubKey := initializeDotShakerConf(
+	conf, err := conf.NewConf(
 		clientCtx,
 		upArgs.clientPath,
-		upArgs.debug, upArgs.serverHost, uint(upArgs.serverPort), upArgs.signalHost, uint(upArgs.signalPort), dotlog)
+		upArgs.debug,
+		upArgs.serverHost,
+		uint(upArgs.serverPort),
+		upArgs.signalHost,
+		uint(upArgs.signalPort),
+		dotlog,
+	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
 
-	r := rcn.NewRcn(signalClient, serverClient, clientConf, mPubKey, nil, dotlog)
+	r := rcn.NewRcn(conf, conf.MachinePubKey, nil, dotlog)
 
 	err = r.Stop()
 	if err != nil {

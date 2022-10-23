@@ -11,6 +11,7 @@ import (
 	"time"
 
 	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/paths"
 	"github.com/Notch-Technologies/dotshake/types/flagtype"
@@ -58,13 +59,19 @@ func execLogin(ctx context.Context, args []string) error {
 	clientCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	mPubKey, serverClient, clientConf := initializeDotShakeConf(
-		clientCtx, dotlog, loginArgs.debug, loginArgs.clientPath,
+	c, err := conf.NewConf(
+		clientCtx, loginArgs.clientPath,
+		loginArgs.debug,
 		loginArgs.serverHost, uint(loginArgs.serverPort),
 		loginArgs.signalHost, uint(loginArgs.signalPort),
+		dotlog,
 	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
 
-	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, loginArgs.debug, serverClient)
+	ip, cidr, err := login(ctx, dotlog, c.Spec.GetServerHost(), c.Spec.WgPrivateKey, c.MachinePubKey, loginArgs.debug, c.ServerClient)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
 		return err
