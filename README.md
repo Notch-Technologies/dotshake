@@ -19,6 +19,8 @@ The key features of Dotshake are:
 - [ ] Mobile Application for iOS, Android
 - [ ] DotDNS(Private Network DNS)
 - [ ] DotSSH(Easy SSH)
+- [ ] DotDivision(We provide one-stop support from testing to development using Dotshake)
+- [ ] DotScale(Enables easy construction of service meshes between microservices in various clouds)
 
 ## Getting Started & Documentation
 
@@ -28,4 +30,3 @@ Documentation is available on the [Dotshake Website](https://dotshake.com):
 - [Documentation](https://docs.dotshake.com)
 
 If you are new to Dotshake, please see [Quick Start guides](https://docs.dotshake.com/ja/how-to-guides/quick_start/) in the documentation.
-

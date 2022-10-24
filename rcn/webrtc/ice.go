@@ -429,7 +429,7 @@ func (i *Ice) waitingRemotePeerConnections() error {
 			return err
 		}
 
-		// start api handler ??(like auth) &
+		// TODO(snt)
 		_, err = i.serverClient.Connect(i.mk)
 		if err != nil {
 			return err
