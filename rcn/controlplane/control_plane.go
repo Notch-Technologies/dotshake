@@ -22,7 +22,7 @@ import (
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/rcn/rcnsock"
 	"github.com/Notch-Technologies/dotshake/rcn/webrtc"
-	"github.com/Notch-Technologies/dotshake/wireguard"
+	"github.com/Notch-Technologies/dotshake/wg"
 	"github.com/pion/ice/v2"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
@@ -292,7 +292,7 @@ func (c *ControlPlane) configureIce(peer *machine.RemotePeer, myip, mycidr strin
 		myip,
 		mycidr,
 		k,
-		wireguard.WgPort,
+		wg.WgPort,
 		c.conf.Spec.TunName,
 		pk,
 		c.mk,

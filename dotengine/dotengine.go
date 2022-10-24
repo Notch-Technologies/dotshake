@@ -13,7 +13,7 @@ import (
 	"github.com/Notch-Technologies/dotshake/dotengine/wonderwall"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/rcn/rcnsock"
-	"github.com/Notch-Technologies/dotshake/wireguard"
+	"github.com/Notch-Technologies/dotshake/wg"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
@@ -68,7 +68,7 @@ func NewDotEngine(
 		ip:        ip,
 		cidr:      cidr,
 		wgPrivKey: wgPrivKey,
-		wgPort:    wireguard.WgPort,
+		wgPort:    wg.WgPort,
 		blackList: blackList,
 
 		sock: sock,
@@ -87,6 +87,8 @@ func (d *DotEngine) startWonderWall() {
 	ww.Start()
 }
 
+// TODO(snt) connect to grpc server
+// dotengine communicates with dotshaker via sockets and servers in a nice way
 func (d *DotEngine) Start() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()

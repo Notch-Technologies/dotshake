@@ -12,7 +12,7 @@ import (
 
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/utils"
-	"github.com/Notch-Technologies/dotshake/wireguard"
+	"github.com/Notch-Technologies/dotshake/wg"
 	"golang.zx2c4.com/wireguard/conn"
 	"golang.zx2c4.com/wireguard/device"
 	"golang.zx2c4.com/wireguard/tun"
@@ -38,7 +38,7 @@ func CreateIface(
 	}
 
 	fwmark := 0
-	port := wireguard.WgPort
+	port := wg.WgPort
 
 	config := wgtypes.Config{
 		PrivateKey:   &key,
@@ -69,7 +69,7 @@ func RemoveIface(
 }
 
 func (i *Iface) createWithUserSpace(tunname, address string) error {
-	tunIface, err := tun.CreateTUN(tunname, wireguard.DefaultMTU)
+	tunIface, err := tun.CreateTUN(tunname, wg.DefaultMTU)
 	if err != nil {
 		return err
 	}

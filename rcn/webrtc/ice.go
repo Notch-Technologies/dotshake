@@ -429,7 +429,6 @@ func (i *Ice) waitingRemotePeerConnections() error {
 			return err
 		}
 
-		// TODO(snt)
 		_, err = i.serverClient.Connect(i.mk)
 		if err != nil {
 			return err

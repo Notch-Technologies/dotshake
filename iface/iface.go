@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Notch-Technologies/dotshake/dotlog"
-	"github.com/Notch-Technologies/dotshake/wireguard"
+	"github.com/Notch-Technologies/dotshake/wg"
 	"golang.zx2c4.com/wireguard/conn"
 	"golang.zx2c4.com/wireguard/device"
 	"golang.zx2c4.com/wireguard/tun"
@@ -139,7 +139,7 @@ func (i *Iface) RemoveRemotePeer(iface string, remoteip, remotePeerPubKey string
 }
 
 func (i *Iface) CreateWithUserSpace(address string) error {
-	tunIface, err := tun.CreateTUN(i.Tun, wireguard.DefaultMTU)
+	tunIface, err := tun.CreateTUN(i.Tun, wg.DefaultMTU)
 	if err != nil {
 		return err
 	}
