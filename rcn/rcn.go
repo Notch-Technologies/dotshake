@@ -85,7 +85,7 @@ func (r *Rcn) Start() {
 
 		go r.cp.WaitForRemoteConn()
 
-		r.cp.StartHangoutMachines()
+		// r.cp.StartHangoutMachines()
 
 		go r.cp.SyncRemoteMachine()
 
