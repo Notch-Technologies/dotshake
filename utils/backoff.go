@@ -1,6 +1,9 @@
 package utils
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // backoff params
 //
@@ -80,6 +83,7 @@ type BackOff struct {
 	operation func() error
 	notify    func(error, time.Duration)
 	exec      BackoffExec
+	execTimer *execTimer
 }
 
 // initialize backoff process
@@ -93,5 +97,29 @@ func NewBackoff(op func() error, exec BackoffExec, no func(error, time.Duration)
 }
 
 func (b *BackOff) Retry() error {
+	// todo: fix
+	// var err error
+	// var next time.Duration
+
+	defer func() {
+		b.execTimer.timer.Stop()
+	}()
+
+	b.exec.Reset()
+
+	return nil
+}
+
+type BackoffExecContext interface {
+	BackoffExec
+	Context() context.Context
+}
+
+func getContext(exec BackoffExec) context.Context {
+	if cb, ok := exec.(BackoffExecContext); ok {
+		return cb.Context()
+	}
+
+	// todo: fix
 	return nil
 }
