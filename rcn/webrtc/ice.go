@@ -26,6 +26,7 @@ import (
 
 type Ice struct {
 	signalClient grpc.SignalClientImpl
+	serverClient grpc.ServerClientImpl
 
 	sock *rcnsock.RcnSock
 
@@ -77,6 +78,7 @@ type Ice struct {
 
 func NewIce(
 	signalClient grpc.SignalClientImpl,
+	serverClient grpc.ServerClientImpl,
 
 	sock *rcnsock.RcnSock,
 
@@ -104,6 +106,7 @@ func NewIce(
 	failedtimeout := time.Second * 5
 	return &Ice{
 		signalClient: signalClient,
+		serverClient: serverClient,
 
 		sock: sock,
 
@@ -327,9 +330,12 @@ func (i *Ice) getLocalUserIceAgentCredentials() (string, string, error) {
 }
 
 // be sure to read ConfigureGatherProcess before calling this function
+// asynchronously waits for a signal process from another peer before sending an offer
 //
 func (i *Ice) StartGatheringProcess() error {
-	go i.waitingForSignalProcess()
+	// must be done asynchronously, separately from SignalOffer,
+	// as it requires waiting for a connection channel from the other peers
+	go i.waitingRemotePeerConnections()
 
 	err := i.signalOffer()
 	if err != nil {
@@ -395,9 +401,10 @@ func (i *Ice) CloseIce() error {
 	return nil
 }
 
-func (i *Ice) waitingForSignalProcess() {
+// when the offer and answer come in, gather the agent's candidates and collect the process.
+// then if there are no errors, go establish a connection
+func (i *Ice) waitingRemotePeerConnections() error {
 	var credentials Credentials
-
 	for {
 		select {
 		case credentials = <-i.remoteAnswerCh:
@@ -413,16 +420,20 @@ func (i *Ice) waitingForSignalProcess() {
 		err := i.agent.GatherCandidates()
 		if err != nil {
 			i.dotlog.Logger.Errorf("failed to gather candidates, %s", err.Error())
-			return
+			return err
 		}
 
 		err = i.startConn(credentials.UserName, credentials.Pwd)
 		if err != nil {
 			i.dotlog.Logger.Errorf("failed to start conn, %s", err.Error())
-			return
+			return err
 		}
 
-		i.ConnectSock()
+		_, err = i.serverClient.Connect(i.mk)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 }
 

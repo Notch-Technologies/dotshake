@@ -127,8 +127,7 @@ func (s *RcnSock) DialDotshakeStatus() (*DialDotshakeStatus, error) {
 	encoder := gob.NewEncoder(conn)
 
 	d := &RcnDialSock{
-		MessageType: CompletedConn,
-
+		MessageType:        CompletedConn,
 		DialDotshakeStatus: &DialDotshakeStatus{},
 	}
 

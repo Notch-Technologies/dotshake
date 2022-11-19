@@ -8,87 +8,9 @@ import (
 	"context"
 	"flag"
 	"strings"
-	"time"
 
-	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
-	"github.com/Notch-Technologies/dotshake/conf"
-	"github.com/Notch-Technologies/dotshake/dotlog"
-	"github.com/Notch-Technologies/dotshake/paths"
-	"github.com/Notch-Technologies/dotshake/store"
 	"github.com/peterbourgon/ff/v2/ffcli"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 )
-
-// processing required for all commands in common
-//
-func initializeDotShakeConf(
-	clientCtx context.Context,
-	dotlog *dotlog.DotLog,
-	isDebug bool,
-	clientPath string,
-	serverHost string, serverPort uint,
-	signalHost string, signalPort uint,
-) (mPubKey string, serverClient grpc_client.ServerClientImpl, clientConf *conf.ClientConf) {
-	// initialize file store
-	//
-	cfs, err := store.NewFileStore(paths.DefaultDotshakeClientStateFile(), dotlog)
-	if err != nil {
-		dotlog.Logger.Warnf("failed to create client state, because %v", err)
-	}
-
-	dotlog.Logger.Debugf("client store has been succeassfully created")
-
-	cs := store.NewClientStore(cfs, dotlog)
-	err = cs.WritePrivateKey()
-	if err != nil {
-		dotlog.Logger.Warnf("failed to write client state private key, because %v", err)
-	}
-
-	dotlog.Logger.Debugf("private key was successfully written to client store")
-	mPubKey = cs.GetPublicKey()
-
-	// initialize client conf
-	//
-	clientConf, err = conf.NewClientConf(
-		clientPath,
-		serverHost, serverPort,
-		signalHost, signalPort,
-		isDebug,
-		dotlog,
-	)
-
-	if err != nil {
-		dotlog.Logger.Warnf("failed to initialize client core, because %v", err)
-	}
-
-	clientConf = clientConf.CreateClientConf()
-	if err != nil {
-		dotlog.Logger.Warnf("can not get client conf, because %v", err)
-	}
-
-	dotlog.Logger.Debugf("client config file has been succeassfully created")
-
-	option := grpc_client.NewGrpcDialOption(dotlog, isDebug)
-
-	gconn, err := grpc.DialContext(
-		clientCtx,
-		clientConf.GetServerHost(),
-		option,
-		grpc.WithBlock(),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second,
-			Timeout:             10 * time.Second,
-			PermitWithoutStream: true,
-		}))
-
-	serverClient = grpc_client.NewServerClient(gconn, dotlog)
-	if err != nil {
-		dotlog.Logger.Warnf("failed to connect grpc server client, because %v", err)
-	}
-
-	return mPubKey, serverClient, clientConf
-}
 
 func Run(args []string) error {
 	if len(args) == 1 && (args[0] == "-V" || args[0] == "--version" || args[0] == "-v") {

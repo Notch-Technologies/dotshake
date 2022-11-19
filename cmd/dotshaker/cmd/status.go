@@ -36,11 +36,11 @@ var statusDaemonCmd = &ffcli.Command{
 }
 
 func statusDaemon(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(statusArgs.logLevel, statusArgs.logFile, statusArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker status", statusArgs.logLevel, statusArgs.logFile, statusArgs.debug)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
+		return err
 	}
-	dotlog := dotlog.NewDotLog("status")
 
 	d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
 	status, _ := d.Status()

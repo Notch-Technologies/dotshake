@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD 3-Clause License
 // license that can be found in the LICENSE file.
 
-package wireguard
+package wg
 
 import "time"
 

@@ -132,6 +132,7 @@ func (c *SignalClient) Answer(
 }
 
 // actually connected to grpc stream
+// if StartConnect succeeds, set the Connection's State to Connected
 func (c *SignalClient) connectStream(ctx context.Context) (negotiation.NegotiationService_StartConnectClient, error) {
 
 	stream, err := c.negClient.StartConnect(ctx, grpc.WaitForReady(true))

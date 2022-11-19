@@ -7,13 +7,14 @@ package cmd
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotengine"
@@ -58,30 +59,53 @@ var upCmd = &ffcli.Command{
 // if not, prompt the user to start it.
 //
 func execUp(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(upArgs.logLevel, upArgs.logFile, upArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshake up", upArgs.logLevel, upArgs.logFile, upArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
+		fmt.Printf("failed to initialize logger. because %v", err)
+		return nil
 	}
-	dotlog := dotlog.NewDotLog("dotshake up")
 
 	clientCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	mPubKey, serverClient, clientConf := initializeDotShakeConf(
-		clientCtx, dotlog, upArgs.debug, upArgs.clientPath, upArgs.serverHost, uint(upArgs.serverPort),
-		upArgs.signalHost, uint(upArgs.signalPort),
+	c, err := conf.NewConf(
+		clientCtx,
+		upArgs.clientPath,
+		upArgs.debug,
+		upArgs.serverHost,
+		uint(upArgs.serverPort),
+		upArgs.signalHost,
+		uint(upArgs.signalPort),
+		dotlog,
 	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
 
-	ip, cidr, err := login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
+	res, err := c.ServerClient.Login(c.MachinePubKey, c.Spec.WgPrivateKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
+		return nil
 	}
 
 	if !isInstallDotshakerDaemon(dotlog) || !isRunningDotShakerProcess(dotlog) {
 		dotlog.Logger.Warnf("You need to activate dotshaker. execute this command 'dotshaker up'")
+		fmt.Println("You need to activate dotshaker.")
+		return nil
 	}
 
-	err = upEngine(ctx, serverClient, dotlog, clientConf.TunName, mPubKey, ip, cidr, clientConf.WgPrivateKey, clientConf.BlackList)
+	err = upEngine(
+		ctx,
+		c.ServerClient,
+		dotlog,
+		c.Spec.TunName,
+		c.MachinePubKey,
+		res.Ip,
+		res.Cidr,
+		c.Spec.WgPrivateKey,
+		c.Spec.BlackList,
+	)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to start engine. because %v", err)
 		return err
@@ -122,7 +146,7 @@ func upEngine(
 ) error {
 	pctx, cancel := context.WithCancel(ctx)
 
-	engine, err := dotengine.NewDotEngine(
+	dotEngine, err := dotengine.NewDotEngine(
 		serverClient,
 		dotlog,
 		tunName,
@@ -140,7 +164,7 @@ func upEngine(
 	}
 
 	// start engine
-	err = engine.Start()
+	err = dotEngine.Start()
 	if err != nil {
 		dotlog.Logger.Warnf("failed to start dotengine. because %v", err)
 		return err

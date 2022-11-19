@@ -8,13 +8,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	grpc_client "github.com/Notch-Technologies/dotshake/client/grpc"
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotlog"
@@ -22,7 +21,6 @@ import (
 	"github.com/Notch-Technologies/dotshake/rcn"
 	"github.com/Notch-Technologies/dotshake/types/flagtype"
 	"github.com/peterbourgon/ff/v2/ffcli"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 var upArgs struct {
@@ -58,30 +56,43 @@ var upCmd = &ffcli.Command{
 }
 
 func execUp(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(upArgs.logLevel, upArgs.logFile, upArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker up", upArgs.logLevel, upArgs.logFile, upArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
+		fmt.Printf("failed to initialize logger. because %v", err)
+		return nil
 	}
-
-	dotlog := dotlog.NewDotLog("dotshaker up")
 
 	clientCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	signalClient, serverClient, clientConf, mPubKey := initializeDotShakerConf(clientCtx, upArgs.clientPath, upArgs.debug, upArgs.serverHost, uint(upArgs.serverPort), upArgs.signalHost, uint(upArgs.signalPort), dotlog)
+	conf, err := conf.NewConf(
+		clientCtx,
+		upArgs.clientPath,
+		upArgs.debug,
+		upArgs.serverHost,
+		uint(upArgs.serverPort),
+		upArgs.signalHost,
+		uint(upArgs.signalPort),
+		dotlog,
+	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
 
 	// TODO: (shinta) remove login process,
 	// this is because you log in when you do dotshake up,
 	// and then you make dotshaker work on the dotshake command side!This is because you log in when you do dotshake up,
 	//  and then you make dotshaker work on the dotshake command side!
-	err = login(ctx, dotlog, clientConf.GetServerHost(), clientConf.WgPrivateKey, mPubKey, upArgs.debug, serverClient)
+	_, err = conf.ServerClient.Login(conf.MachinePubKey, conf.Spec.WgPrivateKey)
 	if err != nil {
 		dotlog.Logger.Warnf("failed to login, %s", err.Error())
+		return nil
 	}
 
 	ch := make(chan struct{})
 
-	r := rcn.NewRcn(signalClient, serverClient, clientConf, mPubKey, ch, dotlog)
+	r := rcn.NewRcn(conf, conf.MachinePubKey, ch, dotlog)
 
 	if upArgs.daemon {
 		d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
@@ -116,47 +127,7 @@ func execUp(ctx context.Context, args []string) error {
 	}()
 	<-ch
 
-	r.Close()
+	r.Stop()
 
 	return nil
-}
-
-func login(
-	ctx context.Context,
-	dotlog *dotlog.DotLog,
-	serverHost string,
-	wgPrivKey, mkPubKey string,
-	isDev bool,
-	serverClient grpc_client.ServerClientImpl,
-) error {
-	wgPrivateKey, err := wgtypes.ParseKey(wgPrivKey)
-	if err != nil {
-		dotlog.Logger.Warnf("failed to parse wg private key, because %v", err)
-	}
-
-	res, err := serverClient.GetMachine(mkPubKey, wgPrivateKey.PublicKey().String())
-	if err != nil {
-		return err
-	}
-
-	// TODO: (shinta) use the open command to make URL pages open by themselves,
-	// you need to sign in or let either process if you are not signed in or signed up before accessing the loginurl.
-	if !res.IsRegistered {
-		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
-		msg, err := serverClient.ConnectStreamPeerLoginSession(mkPubKey)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Your dotshake ip => [%s/%s]\n", msg.Ip, msg.Cidr)
-		fmt.Printf("Successful login\n")
-
-		return nil
-	}
-
-	fmt.Printf("Your dotshake ip => [%s/%s]\n", res.Ip, res.Cidr)
-	fmt.Printf("Successful login\n")
-
-	return nil
-
 }

@@ -5,10 +5,11 @@
 package wonderwall
 
 // wonderwall is a magic wall that coordinates communication with
-// ether and rcn control planes, etc. // that assist in communication
-//
+// runs on dotshaker daemon, exchanges status with RCN control plane with server
+// so in most cases you can get information about the dotshaker daemon through the server from here.
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/Notch-Technologies/dotshake/dotlog"
@@ -40,8 +41,9 @@ func (w *WonderWall) dialRcnSock() error {
 		return err
 	}
 
-	w.dotlog.Logger.Debugf("dotshake connect status => [%s]", ds.Status)
-	w.dotlog.Logger.Debugf("dotshake ip => %s/%s", ds.Ip, ds.Cidr)
+	fmt.Printf("dotshake connect to server status => [%s]\n", ds.Status)
+	fmt.Printf("dotshake ip => [%s/%s]\n", ds.Ip, ds.Cidr)
+
 	return nil
 }
 

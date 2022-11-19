@@ -10,7 +10,7 @@ import (
 
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/iface"
-	"github.com/Notch-Technologies/dotshake/wireguard"
+	"github.com/Notch-Technologies/dotshake/wg"
 	"github.com/pion/ice/v2"
 )
 
@@ -91,13 +91,13 @@ func (w *WireProxy) configureNoProxy() error {
 	if err != nil {
 		return err
 	}
-	udpAddr.Port = wireguard.WgPort
+	udpAddr.Port = wg.WgPort
 
 	err = w.iface.ConfigureToRemotePeer(
 		w.remoteWgPubKey,
 		w.remoteIp,
 		udpAddr,
-		wireguard.DefaultWgKeepAlive,
+		wg.DefaultWgKeepAlive,
 		w.preSharedKey,
 	)
 	if err != nil {
@@ -121,7 +121,7 @@ func (w *WireProxy) configureWireProxy() error {
 		w.remoteWgPubKey,
 		w.remoteIp,
 		udpAddr,
-		wireguard.DefaultWgKeepAlive,
+		wg.DefaultWgKeepAlive,
 		w.preSharedKey,
 	)
 	if err != nil {
@@ -224,13 +224,13 @@ func (w *WireProxy) monLocalToRemoteProxy() {
 		default:
 			n, err := w.localConn.Read(buf)
 			if err != nil {
-				w.dotlog.Logger.Errorf("localConn cannot read remoteProxyBuffer [%s], size is %d", string(buf), n)
+				// w.dotlog.Logger.Errorf("localConn cannot read remoteProxyBuffer [%s], size is %d", string(buf), n)
 				continue
 			}
 
 			_, err = w.remoteConn.Write(buf[:n])
 			if err != nil {
-				w.dotlog.Logger.Errorf("localConn cannot write remoteProxyBuffer [%s], size is %d", string(buf), n)
+				// w.dotlog.Logger.Errorf("localConn cannot write remoteProxyBuffer [%s], size is %d", string(buf), n)
 				continue
 			}
 
@@ -250,13 +250,13 @@ func (w *WireProxy) monRemoteToLocalProxy() {
 		default:
 			n, err := w.remoteConn.Read(buf)
 			if err != nil {
-				w.dotlog.Logger.Errorf("remoteConn cannot read localProxyBuffer [%s], size is %d", string(buf), n)
+				// w.dotlog.Logger.Errorf("remoteConn cannot read localProxyBuffer [%s], size is %d", string(buf), n)
 				continue
 			}
 
 			_, err = w.localConn.Write(buf[:n])
 			if err != nil {
-				w.dotlog.Logger.Errorf("localConn cannot write localProxyBuffer [%s], size is %d", string(buf), n)
+				// w.dotlog.Logger.Errorf("localConn cannot write localProxyBuffer [%s], size is %d", string(buf), n)
 				continue
 			}
 

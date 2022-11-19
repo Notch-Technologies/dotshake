@@ -6,31 +6,32 @@ package grpc
 
 import (
 	"context"
-	"io"
+	"fmt"
 
+	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/daemon"
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/login_session"
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/machine"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/system"
 	"github.com/Notch-Technologies/dotshake/utils"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ServerClientImpl interface {
-	GetMachine(mk, wgPubKey string) (*machine.GetMachineResponse, error)
-
+	Login(mk, wgPrivKey string) (*machine.LoginResponse, error)
 	SyncRemoteMachinesConfig(mk string) (*machine.SyncMachinesResponse, error)
-
-	ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error
-	JoinHangoutMachines(mk string) (*machine.HangOutMachinesResponse, error)
-
 	ConnectStreamPeerLoginSession(mk string) (*login_session.PeerLoginSessionResponse, error)
+	Connect(mk string) (*daemon.GetConnectionStatusResponse, error)
+	Disconnect(mk string) (*daemon.GetConnectionStatusResponse, error)
+	GetConnectionStatus(mk string) (*daemon.GetConnectionStatusResponse, error)
 }
 
 type ServerClient struct {
 	machineClient      machine.MachineServiceClient
+	daemonClient       daemon.DaemonServiceClient
 	loginSessionClient login_session.LoginSessionServiceClient
 	conn               *grpc.ClientConn
 	ctx                context.Context
@@ -43,6 +44,7 @@ func NewServerClient(
 ) ServerClientImpl {
 	return &ServerClient{
 		machineClient:      machine.NewMachineServiceClient(conn),
+		daemonClient:       daemon.NewDaemonServiceClient(conn),
 		loginSessionClient: login_session.NewLoginSessionServiceClient(conn),
 		conn:               conn,
 		ctx:                context.Background(),
@@ -52,23 +54,39 @@ func NewServerClient(
 
 // TODO: (shinta) remove SIGNAL_HOST and SIGNAL_PORT from env,
 // use the SignalHost and SignalPort in response
-func (c *ServerClient) GetMachine(mk, wgPubKey string) (*machine.GetMachineResponse, error) {
-	md := metadata.New(map[string]string{utils.MachineKey: mk, utils.WgPubKey: wgPubKey})
-	ctx := metadata.NewOutgoingContext(c.ctx, md)
+func (c *ServerClient) Login(mk, wgPrivKey string) (*machine.LoginResponse, error) {
+	var (
+		ip   string
+		cidr string
+	)
 
-	res, err := c.machineClient.GetMachine(ctx, &emptypb.Empty{})
+	parsedKey, err := wgtypes.ParseKey(wgPrivKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return &machine.GetMachineResponse{
-		IsRegistered: res.IsRegistered,
-		LoginUrl:     res.LoginUrl,
-		Ip:           res.Ip,
-		Cidr:         res.Cidr,
-		SignalHost:   res.SignalHost,
-		SignalPort:   res.SignalPort,
-	}, nil
+	md := metadata.New(map[string]string{utils.MachineKey: mk, utils.WgPubKey: parsedKey.PublicKey().String()})
+	ctx := metadata.NewOutgoingContext(c.ctx, md)
+
+	res, err := c.machineClient.Login(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	if !res.IsRegistered {
+		fmt.Printf("please log in via this link => %s\n", res.LoginUrl)
+		msg, err := c.ConnectStreamPeerLoginSession(mk)
+		if err != nil {
+			return nil, err
+		}
+		ip = msg.Ip
+		cidr = msg.Cidr
+	}
+
+	fmt.Printf("Your dotshake ip => [%s/%s]\n", ip, cidr)
+	fmt.Printf("Successful login\n")
+
+	return res, nil
 }
 
 func (c *ServerClient) ConnectStreamPeerLoginSession(mk string) (*login_session.PeerLoginSessionResponse, error) {
@@ -121,43 +139,38 @@ func (c *ServerClient) SyncRemoteMachinesConfig(mk string) (*machine.SyncMachine
 	return conf, nil
 }
 
-func (c *ServerClient) ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error {
+func (c *ServerClient) Connect(mk string) (*daemon.GetConnectionStatusResponse, error) {
 	md := metadata.New(map[string]string{utils.MachineKey: mk})
 	newctx := metadata.NewOutgoingContext(c.ctx, md)
 
-	stream, err := c.machineClient.ConnectToHangoutMachines(newctx, &emptypb.Empty{})
-	if err != nil {
-		return err
-	}
-
-	for {
-		hangout, err := stream.Recv()
-		if err == io.EOF {
-			c.dotlog.Logger.Errorf("hangout machines return to EOF, received by [%s]", mk)
-			return err
-		}
-
-		if err != nil {
-			c.dotlog.Logger.Errorf("disconnect hangout machines, received by [%s], %s", mk, err.Error())
-			return err
-		}
-
-		err = handler(hangout)
-		if err != nil {
-			c.dotlog.Logger.Errorf("error handle with hangout machines, received by [%s]", mk)
-			return err
-		}
-	}
-}
-
-func (c *ServerClient) JoinHangoutMachines(mk string) (*machine.HangOutMachinesResponse, error) {
-	md := metadata.New(map[string]string{utils.MachineKey: mk})
-	newctx := metadata.NewOutgoingContext(c.ctx, md)
-
-	res, err := c.machineClient.JoinHangOutMachines(newctx, &emptypb.Empty{})
+	status, err := c.daemonClient.Connect(newctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	return status, nil
+}
+
+func (c *ServerClient) Disconnect(mk string) (*daemon.GetConnectionStatusResponse, error) {
+	md := metadata.New(map[string]string{utils.MachineKey: mk})
+	newctx := metadata.NewOutgoingContext(c.ctx, md)
+
+	status, err := c.daemonClient.Disconnect(newctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	return status, nil
+}
+
+func (c *ServerClient) GetConnectionStatus(mk string) (*daemon.GetConnectionStatusResponse, error) {
+	md := metadata.New(map[string]string{utils.MachineKey: mk})
+	newctx := metadata.NewOutgoingContext(c.ctx, md)
+
+	status, err := c.daemonClient.GetConnectionStatus(newctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	return status, nil
 }

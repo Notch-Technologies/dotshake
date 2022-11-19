@@ -2,17 +2,23 @@
 // Use of this source code is governed by a BSD 3-Clause License
 // license that can be found in the LICENSE file.
 
+// the down cmd terminates the dotshaker daemon process and closes
+// the p2p connection
+
 package cmd
 
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
+	"time"
 
+	"github.com/Notch-Technologies/dotshake/conf"
 	"github.com/Notch-Technologies/dotshake/daemon"
 	dd "github.com/Notch-Technologies/dotshake/daemon/dotshaker"
 	"github.com/Notch-Technologies/dotshake/dotlog"
 	"github.com/Notch-Technologies/dotshake/paths"
+	"github.com/Notch-Technologies/dotshake/rcn"
 	"github.com/peterbourgon/ff/v2/ffcli"
 )
 
@@ -38,26 +44,51 @@ var downCmd = &ffcli.Command{
 // uninstall dotshaker and delete wireguard interface
 //
 func execDown(ctx context.Context, args []string) error {
-	err := dotlog.InitDotLog(downArgs.logLevel, downArgs.logFile, downArgs.debug)
+	dotlog, err := dotlog.NewDotLog("dotshaker down", downArgs.logLevel, downArgs.logFile, downArgs.debug)
 	if err != nil {
-		log.Fatalf("failed to initialize logger. because %v", err)
+		fmt.Println("failed to initialize logger")
+		return nil
 	}
-	dotlog := dotlog.NewDotLog("dotshaker down")
 
 	d := daemon.NewDaemon(dd.BinPath, dd.ServiceName, dd.DaemonFilePath, dd.SystemConfig, dotlog)
 
 	_, isInstalled := d.Status()
 	if !isInstalled {
-		dotlog.Logger.Debugf("already down")
+		fmt.Println("already terminated")
+		return nil
+	}
+
+	clientCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	conf, err := conf.NewConf(
+		clientCtx,
+		upArgs.clientPath,
+		upArgs.debug,
+		upArgs.serverHost,
+		uint(upArgs.serverPort),
+		upArgs.signalHost,
+		uint(upArgs.signalPort),
+		dotlog,
+	)
+	if err != nil {
+		fmt.Printf("failed to create client conf, because %s\n", err.Error())
+		return nil
+	}
+
+	r := rcn.NewRcn(conf, conf.MachinePubKey, nil, dotlog)
+
+	err = r.Stop()
+	if err != nil {
+		fmt.Println("failed to uninstall dotshake")
 		return nil
 	}
 
 	err = d.Uninstall()
 	if err != nil {
-		dotlog.Logger.Errorf("failed to uninstall dotshaker, %s", err.Error())
+		fmt.Println("failed to uninstall dotshake")
+		return nil
 	}
-
-	dotlog.Logger.Debugf("completed down dotshaker")
 
 	return nil
 }
