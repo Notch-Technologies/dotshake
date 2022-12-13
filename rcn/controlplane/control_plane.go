@@ -369,42 +369,42 @@ func (c *ControlPlane) WaitForRemoteConn() {
 // notify here when another machine or itself joinsHangOutMachines
 // when coming adding new peer or initial sync
 //
-func (c *ControlPlane) StartHangoutMachines() {
-	go func() {
-		c.serverClient.ConnectToHangoutMachines(c.mk, func(res *machine.HangOutMachinesResponse) error {
-			c.mu.Lock()
-			defer c.mu.Unlock()
+// func (c *ControlPlane) StartHangoutMachines() {
+// 	go func() {
+// 		c.serverClient.ConnectToHangoutMachines(c.mk, func(res *machine.HangOutMachinesResponse) error {
+// 			c.mu.Lock()
+// 			defer c.mu.Unlock()
 
-			if res.GetRemotePeers() != nil {
-				c.dotlog.Logger.Debugf("got remote peers => %v", res.GetRemotePeers())
-				err := c.syncRemotePeerConfig(res.GetRemotePeers())
-				if err != nil {
-					return err
-				}
-			}
+// 			if res.GetRemotePeers() != nil {
+// 				c.dotlog.Logger.Debugf("got remote peers => %v", res.GetRemotePeers())
+// 				err := c.syncRemotePeerConfig(res.GetRemotePeers())
+// 				if err != nil {
+// 					return err
+// 				}
+// 			}
 
-			// TODO: (shinta) it seems a little confusing. will refactoring. https://github.com/Notch-Technologies/dotshake/issues/21
-			// initialize to maintain agent integrity when a disconnected Machine reconnects
-			//
-			if res.GetHangOutType() == machine.HangOutType_DISCONNECT {
-				if peer, ok := c.peerConns[res.TargetMachineKey]; ok {
-					err := peer.Setup()
-					if err != nil {
-						c.dotlog.Logger.Errorf("failed to resetup %s, %s", res.TargetMachineKey, err.Error())
-					}
-				}
-				return nil
-			}
+// 			// TODO: (shinta) it seems a little confusing. will refactoring. https://github.com/Notch-Technologies/dotshake/issues/21
+// 			// initialize to maintain agent integrity when a disconnected Machine reconnects
+// 			//
+// 			if res.GetHangOutType() == machine.HangOutType_DISCONNECT {
+// 				if peer, ok := c.peerConns[res.TargetMachineKey]; ok {
+// 					err := peer.Setup()
+// 					if err != nil {
+// 						c.dotlog.Logger.Errorf("failed to resetup %s, %s", res.TargetMachineKey, err.Error())
+// 					}
+// 				}
+// 				return nil
+// 			}
 
-			err := c.NotifyRemotePeersConn(res.GetRemotePeers(), res.Ip, res.Cidr)
-			if err != nil {
-				return err
-			}
+// 			err := c.NotifyRemotePeersConn(res.GetRemotePeers(), res.Ip, res.Cidr)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			return nil
-		})
-	}()
-}
+// 			return nil
+// 		})
+// 	}()
+// }
 
 // maintain flexible connections by updating remote machines
 // information on a regular basis, rather than only when other Machines join

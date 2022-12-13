@@ -6,7 +6,6 @@ package grpc
 
 import (
 	"context"
-	"io"
 
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/login_session"
 	"github.com/Notch-Technologies/client-go/notch/dotshake/v1/machine"
@@ -23,7 +22,7 @@ type ServerClientImpl interface {
 
 	SyncRemoteMachinesConfig(mk string) (*machine.SyncMachinesResponse, error)
 
-	ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error
+	// ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error
 	JoinHangoutMachines(mk string) (*machine.HangOutMachinesResponse, error)
 
 	ConnectStreamPeerLoginSession(mk string) (*login_session.PeerLoginSessionResponse, error)
@@ -121,34 +120,34 @@ func (c *ServerClient) SyncRemoteMachinesConfig(mk string) (*machine.SyncMachine
 	return conf, nil
 }
 
-func (c *ServerClient) ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error {
-	md := metadata.New(map[string]string{utils.MachineKey: mk})
-	newctx := metadata.NewOutgoingContext(c.ctx, md)
+// func (c *ServerClient) ConnectToHangoutMachines(mk string, handler func(msg *machine.HangOutMachinesResponse) error) error {
+// 	md := metadata.New(map[string]string{utils.MachineKey: mk})
+// 	newctx := metadata.NewOutgoingContext(c.ctx, md)
 
-	stream, err := c.machineClient.ConnectToHangoutMachines(newctx, &emptypb.Empty{})
-	if err != nil {
-		return err
-	}
+// 	stream, err := c.machineClient.ConnectToHangoutMachines(newctx, &emptypb.Empty{})
+// 	if err != nil {
+// 		return err
+// 	}
 
-	for {
-		hangout, err := stream.Recv()
-		if err == io.EOF {
-			c.dotlog.Logger.Errorf("hangout machines return to EOF, received by [%s]", mk)
-			return err
-		}
+// 	for {
+// 		hangout, err := stream.Recv()
+// 		if err == io.EOF {
+// 			c.dotlog.Logger.Errorf("hangout machines return to EOF, received by [%s]", mk)
+// 			return err
+// 		}
 
-		if err != nil {
-			c.dotlog.Logger.Errorf("disconnect hangout machines, received by [%s], %s", mk, err.Error())
-			return err
-		}
+// 		if err != nil {
+// 			c.dotlog.Logger.Errorf("disconnect hangout machines, received by [%s], %s", mk, err.Error())
+// 			return err
+// 		}
 
-		err = handler(hangout)
-		if err != nil {
-			c.dotlog.Logger.Errorf("error handle with hangout machines, received by [%s]", mk)
-			return err
-		}
-	}
-}
+// 		err = handler(hangout)
+// 		if err != nil {
+// 			c.dotlog.Logger.Errorf("error handle with hangout machines, received by [%s]", mk)
+// 			return err
+// 		}
+// 	}
+// }
 
 func (c *ServerClient) JoinHangoutMachines(mk string) (*machine.HangOutMachinesResponse, error) {
 	md := metadata.New(map[string]string{utils.MachineKey: mk})
